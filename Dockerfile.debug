@@ -1,0 +1,15 @@
+FROM node:10.20.1
+
+USER 1000
+WORKDIR /app
+ENV PATH /app/node_modules/.bin:$PATH
+
+COPY package.json /app/package.json
+COPY . /app
+
+USER 0
+RUN npm i -g @nestjs/cli
+RUN npm ci && mkdir -p /app/dist && chown 1000:1000 /app/dist
+
+USER 1000
+CMD [ "nest", "start", "--debug" ]
