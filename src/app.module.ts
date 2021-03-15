@@ -47,7 +47,7 @@ import { ProjectRolesModule } from './project-roles/project-roles.module';
       port: 3306,
       username: process.env.CLOUDGUARD_MARIADB_USERNAME,
       password: process.env.CLOUDGUARD_MARIADB_PASSWORD,
-      database: process.env.CLOUDGUARD_MARIADB_DATABASE,
+      database: process.env.CLOUDGUARD_MARIADB_DATABASE || "cloudguard",
       entities: [User, UserPreference, Cluster, Registry, Role, Project, ProjectRole],
       synchronize: true
     }),
