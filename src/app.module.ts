@@ -42,12 +42,12 @@ import { ProjectRolesModule } from './project-roles/project-roles.module';
       load: [configuration]
     }),
     TypeOrmModule.forRoot({
-      type: 'mariadb',
-      host: process.env.CLOUDGUARD_MARIADB_HOST,
-      port: 3306,
-      username: process.env.CLOUDGUARD_MARIADB_USERNAME,
-      password: process.env.CLOUDGUARD_MARIADB_PASSWORD,
-      database: process.env.CLOUDGUARD_MARIADB_DATABASE || "cloudguard",
+      type: 'postgres',
+      host: process.env.CLOUDGUARD_POSTGRES_HOST || "localhost",
+      port: 5432,
+      username: process.env.CLOUDGUARD_POSTGRES_USERNAME || "postgres",
+      password: process.env.CLOUDGUARD_POSTGRES_PASSWORD || "pass",
+      database: process.env.CLOUDGUARD_POSTGRES_DATABASE || "cloudguard",
       entities: [User, UserPreference, Cluster, Registry, Role, Project, ProjectRole],
       synchronize: true
     }),

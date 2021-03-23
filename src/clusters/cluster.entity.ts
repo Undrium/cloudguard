@@ -14,7 +14,7 @@ export class Cluster {
     @Column({ default: "NONE" })
     apiServer: string;
 
-    @Column({ type: "blob", default: "" })
+    @Column({ type: "text", default: "" })
     token: string;
 
     @Column({ nullable: true })
@@ -28,6 +28,9 @@ export class Cluster {
 
     @Column({ default: "CREATED" })
     vendorState: string;
+
+    @Column('jsonb', {nullable: true})
+    specification?: object;
 
     @Column({ default: "" })
     vendorLocation: string;

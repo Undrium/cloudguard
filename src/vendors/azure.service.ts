@@ -13,6 +13,7 @@ const querystring = require('querystring');
 @Injectable()
 export class AzureService {
     private readonly logger = new Logger(AzureService.name);
+
     constructor(
         private configService: ConfigService,
         private azureConfiguratorService: AzureConfiguratorService
@@ -80,6 +81,7 @@ export class AzureService {
         var resourceGroup = this.configService.get<string>('aks.resourceGroup');
         var resourceName = name + "-generated";
         var url = "https://management.azure.com/subscriptions/"+subscriptionId+"/resourceGroups/"+resourceGroup+"/providers/Microsoft.ContainerService/managedClusters/"+resourceName+"?api-version=2020-09-01";
+        
         var data = clusterData.specification;
         data.properties['dnsPrefix'] = resourceName;
         data.properties['servicePrincipalProfile'] = {
@@ -94,6 +96,7 @@ export class AzureService {
         }catch(error){
             throw this.handleAzureError(error);
         }
+        
         // Response will contain a data object describing the cluster, this will have for instance name
         return response.data || null;
     }

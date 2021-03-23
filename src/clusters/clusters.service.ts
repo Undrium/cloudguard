@@ -42,20 +42,22 @@ export class ClustersService {
 
 
     async createAKSCluster(clusterData: any) {
-      var clusterData = await this.azureService.createCluster(clusterData);
+      var specification = clusterData.specification;
+      var azureResponse = await this.azureService.createCluster(clusterData);
       // We need a reference somewhere, create it here
       if(clusterData.name){
         try{
           await this.create({
-            name: clusterData.name,
+            name: azureResponse.name,
             platform: "KUBERNETES",
             vendor: "AZURE",
             vendorState: "Creating",
-            vendorLocation: clusterData.location
+            vendorLocation: azureResponse.location,
+            specification: specification
           });
         }catch(error){
           // Fallback!
-          await this.azureService.deleteCluster(clusterData.name);
+          await this.azureService.deleteCluster(azureResponse.name);
         }
       }
 
