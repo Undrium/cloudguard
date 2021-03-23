@@ -44,7 +44,7 @@ import { ProjectRolesModule } from './project-roles/project-roles.module';
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.CLOUDGUARD_POSTGRES_HOST || "localhost",
-      port: 5432,
+      port: parseInt(process.env.CLOUDGUARD_POSTGRES_PORT || "5432"),
       username: process.env.CLOUDGUARD_POSTGRES_USERNAME || "postgres",
       password: process.env.CLOUDGUARD_POSTGRES_PASSWORD || "pass",
       database: process.env.CLOUDGUARD_POSTGRES_DATABASE || "cloudguard",

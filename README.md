@@ -1,11 +1,11 @@
 ## Environment Variables
 ### Database 
-More information will be provided, the CloudGuard currently uses MariahDB
-* CLOUDGUARD_MARIADB_HOST=
-* CLOUDGUARD_MARIADB_PORT=
-* CLOUDGUARD_MARIADB_USERNAME=
-* CLOUDGUARD_MARIADB_PASSWORD=
-* CLOUDGUARD_MARIADB_DATABASE=
+The CloudGuard currently uses PostgreSQL, setup the following variables to make it work. Also make sure the PostgreSQL has the database up and running. It will be populated once the Cloudguard starts up.
+* CLOUDGUARD_POSTGRES_HOST
+* CLOUDGUARD_POSTGRES_PORT
+* CLOUDGUARD_POSTGRES_USERNAME
+* CLOUDGUARD_POSTGRES_PASSWORD
+* CLOUDGUARD_POSTGRES_DATABASE
 
 ### Azure
 * CLOUDGUARD_AKS_CLIENT_ID - The applications client ID if AKS API is needed
