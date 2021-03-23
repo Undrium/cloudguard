@@ -3,12 +3,12 @@ const k8s = require('@kubernetes/client-node');
 import { ConfigService } from '@nestjs/config';
 import { Cluster } from '../clusters/cluster.entity';
 
-import { ClientService } from './client.service';
-import { CloudguardLogger } from '../cloudguard-logger.service';
+import { ClientService }    from './client.service';
+import { LoggerService }    from '../logger.service';
 
 @Injectable()
 export class KubernetesService {
-    private readonly logger = new CloudguardLogger(KubernetesService.name);
+    private readonly logger = new LoggerService(KubernetesService.name);
 
     constructor(private configService: ConfigService, private clientService: ClientService) {}
 

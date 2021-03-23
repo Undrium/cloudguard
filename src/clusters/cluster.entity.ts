@@ -29,7 +29,7 @@ export class Cluster {
     @Column({ default: "CREATED" })
     vendorState: string;
 
-    @Column({ default: "westeurope" })
+    @Column({ default: "" })
     vendorLocation: string;
 
 }

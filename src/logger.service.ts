@@ -1,7 +1,7 @@
-import { LoggerService } from '@nestjs/common';
+import { LoggerService as NestLoggerService } from '@nestjs/common';
 import { Logger } from '@nestjs/common';
 
-export class CloudguardLogger implements LoggerService {
+export class LoggerService implements NestLoggerService {
   private readonly logger
   constructor(sourceName: string){
     this.logger = new Logger(sourceName);
@@ -20,8 +20,8 @@ export class CloudguardLogger implements LoggerService {
     this.verbose(error);
   }
 
-  log(message: any) {
-    this.logger.log(message);
+  log(...args: any[]) {
+    this.logger.log(args);
   }
 
   error(error: any) {
@@ -29,16 +29,16 @@ export class CloudguardLogger implements LoggerService {
     this.logger.error(error, error.stack);
   }
 
-  warn(message: any) {
-    this.logger.warn(message);
+  warn(...args: any[]) {
+    this.logger.warn(args);
   }
 
-  debug(message: any) {
-    this.logger.debug(message);
+  debug(...args: any[]) {
+    this.logger.debug(args);
   }
 
-  verbose(message: any) {
-    this.logger.verbose(message);
+  verbose(...args: any[]) {
+    this.logger.verbose(args);
   }
 
 }

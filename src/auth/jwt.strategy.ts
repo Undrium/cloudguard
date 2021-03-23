@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   private readonly logger = new Logger(JwtStrategy.name);
+  
   constructor(private configService: ConfigService) {
     // TODO Maybe break out secret to an environment variable
     super({

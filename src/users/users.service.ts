@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { CloudguardLogger } from '../cloudguard-logger.service';
+import { LoggerService }    from '../logger.service';
 
 import { Role }             from '../roles/role.entity';
 import { User }             from './user.entity';
@@ -16,7 +16,7 @@ import { UserPreference }   from './user-preference.entity';
 @Injectable()
 export class UsersService {
 
-    private readonly logger = new CloudguardLogger(UsersService.name);
+    private readonly logger = new LoggerService(UsersService.name);
 
     constructor(
         private configService: ConfigService,

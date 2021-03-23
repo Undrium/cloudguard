@@ -3,7 +3,7 @@ import { JwtAuthGuard }     from '../auth/jwt-auth.guard';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository }       from 'typeorm';
 
-import { CloudguardLogger } from '../cloudguard-logger.service';
+import { LoggerService } from '../logger.service';
 
 import { User }                 from './user.entity';
 import { User as UserDec }      from './user.decorator';
@@ -12,7 +12,7 @@ import { UsersService }         from './users.service';
 
 @Controller('users')
 export class UsersController {
-    private readonly logger = new CloudguardLogger(UsersController.name);
+    private readonly logger = new LoggerService(UsersController.name);
     constructor(
         @InjectRepository(User)
         private usersRepository: Repository<User>,
