@@ -12,7 +12,7 @@ export class LoggerService implements NestLoggerService {
       this.logger.error("Can't reach cluster " + error.address, error.stack);
     }else if(error.response && error.response.body && error.response.body.code && error.response.body.message){
       var code = error.response.body.code;
-      if(code == 400 || code == 409 || code == 422){
+      if(code == 400 || code == 409 || code == 422 || code == 500){
         this.logger.error(error.response.body.message, error.stack);
       }
     }

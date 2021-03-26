@@ -3,7 +3,7 @@ import { JwtAuthGuard }     from '../auth/jwt-auth.guard';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository }       from 'typeorm';
 
-import { LoggerService } from '../logger.service';
+import { LoggerService } from '../common/logger.service';
 
 import { User }                 from './user.entity';
 import { User as UserDec }      from './user.decorator';

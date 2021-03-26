@@ -7,7 +7,6 @@ import { Repository, Not } from 'typeorm';
 
 import { KubernetesService } from '../kubernetes/kubernetes.service';
 import { AzureService } from '../vendors/azure.service';
-import { ClientService } from '../kubernetes/client.service';
 import { RbacService } from '../kubernetes/rbac.service';
 import { ProjectsService } from '../projects/projects.service';
 import { UsersService } from '../users/users.service';

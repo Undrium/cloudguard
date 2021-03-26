@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { LoggerService }    from '../logger.service';
+import { LoggerService }    from '../common/logger.service';
 
 import { Role }             from '../roles/role.entity';
 import { User }             from './user.entity';

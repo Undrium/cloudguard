@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { SandboxController } from './sandbox.controller';
 
+import { CommonModule }       from '../common/common.module';
 import { ClustersModule }     from '../clusters/clusters.module';
 import { KubernetesModule }   from '../kubernetes/kubernetes.module';
 import { ProjectsModule }     from '../projects/projects.module';
@@ -10,8 +11,8 @@ import { UsersModule }        from '../users/users.module';
 import { VendorsModule }       from '../vendors/vendors.module';
 
 @Module({
-  controllers: [SandboxController],
   imports: [
+    CommonModule,
     ClustersModule, 
     KubernetesModule, 
     ProjectsModule,
@@ -20,6 +21,7 @@ import { VendorsModule }       from '../vendors/vendors.module';
     UsersModule,
     VendorsModule
   ],
+  controllers: [ SandboxController ],
   providers: [],
   exports: []
 })

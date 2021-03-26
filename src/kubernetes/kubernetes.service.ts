@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-const k8s = require('@kubernetes/client-node');
-import { ConfigService } from '@nestjs/config';
-import { Cluster } from '../clusters/cluster.entity';
+
+import { ConfigService }    from '@nestjs/config';
+import { Cluster }          from '../clusters/cluster.entity';
 
 import { ClientService }    from './client.service';
-import { LoggerService }    from '../logger.service';
+import { LoggerService }    from '../common/logger.service';
 
 @Injectable()
 export class KubernetesService {
@@ -29,6 +29,37 @@ export class KubernetesService {
             namespaces = response.body.items;
         }
         return namespaces;
+    }
+
+    async getNamespace(cluster: Cluster, namespaceName: string): Promise<any>{
+        var namespace = {};
+        var client = this.clientService.createClient(cluster);
+        try{
+            var response = await client.readNamespace(namespaceName);
+        }catch(err){
+            this.logger.handleKubernetesError(err);
+            return false;
+        }
+        if(response && response.body){
+            namespace = response.body;
+        }
+        return namespace;
+    }
+
+    async createNamespace(cluster: Cluster, namespace: any): Promise<any>{
+        var createdNamespace = {};
+        var client = this.clientService.createClient(cluster);
+        try{
+            var response = await client.createNamespace(namespace);
+        }catch(err){
+            console.log(err);
+            this.logger.handleKubernetesError(err);
+            return createdNamespace;
+        }
+        if(response && response.body){
+            createdNamespace = response.body;
+        }
+        return createdNamespace;
     }
 
     async findClusterRole(cluster, roleType = 'edit'){

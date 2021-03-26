@@ -3,7 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 
 import { UsersService }         from '../users/users.service';
-import { LoggerService }        from '../logger.service';
+import { LoggerService }        from '../common/logger.service';
 
 
 @Injectable()

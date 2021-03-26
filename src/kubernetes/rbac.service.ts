@@ -7,7 +7,7 @@ import { Cluster } from '../clusters/cluster.entity';
 import { Project } from 'src/projects/project.entity';
 import { User } from 'src/users/user.entity';
 
-import { LoggerService } from '../logger.service';
+import { LoggerService } from '../common/logger.service';
 
 import { ClientService } from './client.service';
 

@@ -1,7 +1,7 @@
 import { Injectable, ExecutionContext } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 
-import { LoggerService }    from '../logger.service';
+import { LoggerService }    from '../common/logger.service';
 
 @Injectable()
 export class LocalAuthGuard extends AuthGuard('local') {

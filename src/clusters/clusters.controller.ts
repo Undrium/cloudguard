@@ -1,30 +1,34 @@
 import { Controller, Get, UseGuards, Param, Post, Patch, Body, Delete, HttpException, HttpStatus } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
-import { Logger } from '@nestjs/common';
+import { InjectRepository }     from '@nestjs/typeorm';
+import { Repository }           from 'typeorm';
+import { ConfigService }        from '@nestjs/config';
 
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { ProjectRolesGuard } from '../auth/project-roles.guard';
+import { JwtAuthGuard }         from '../auth/jwt-auth.guard';
+import { ProjectRolesGuard }    from '../auth/project-roles.guard';
 
-import { ClustersService } from './clusters.service';
+import { ClustersService }  from './clusters.service';
+import { CloneService }     from '../kubernetes/clone.service';
+import { LoggerService }    from '../common/logger.service';
+import { ResponseService }  from '../common/response.service';
 
-import { Cluster } from './cluster.entity';
-import { ClusterPostDto } from './cluster-post.dto';
-import { ClusterGetDto } from './cluster-get.dto';
-import { ClusterPatchDto } from './cluster-patch.dto';
+import { Cluster }          from './cluster.entity';
+import { ClusterPostDto }   from './cluster-post.dto';
+import { ClusterGetDto }    from './cluster-get.dto';
+import { ClusterPatchDto }  from './cluster-patch.dto';
 
 
 @Controller('clusters')
 export class ClustersController {
     
-    private readonly logger = new Logger(ClustersController.name);
+    private readonly logger = new LoggerService(ClustersController.name);
 
     constructor(
         private configService: ConfigService,
         @InjectRepository(Cluster)
         private clusterRepository: Repository<Cluster>,
-        private clustersService: ClustersService
+        private cloneService: CloneService,
+        private clustersService: ClustersService,
+        private responseService: ResponseService
     ) {}
 
     @UseGuards(JwtAuthGuard)
@@ -91,6 +95,26 @@ export class ClustersController {
     }
 
     @UseGuards(JwtAuthGuard)
+    @Post(':sourceClusterformatName/namespaces/:namespaceFormatName/clone')
+    async clone(@Param('sourceClusterformatName') sourceClusterformatName, @Param('namespaceFormatName') namespaceFormatName, @Body() cloneData: any) {
+        var sourceCluster = await this.clustersService.getCluster(sourceClusterformatName);
+        var targetCluster = await this.clustersService.getCluster(cloneData.targetClusterFormatName);
+        
+        try{
+            await this.cloneService.cloneNamespaceAndContent(
+                namespaceFormatName, 
+                sourceCluster, 
+                targetCluster, 
+                cloneData
+            );
+        }catch(error){
+            throw new HttpException(error, HttpStatus.METHOD_NOT_ALLOWED);
+        }
+
+        return this.responseService.createResponse(true, "Clone was succesful.");
+    }
+
+    @UseGuards(JwtAuthGuard)
     @Post('')
     async create(@Body() clusterPostDto: ClusterPostDto) {
         return this.clustersService.createByPost(clusterPostDto);
@@ -101,6 +125,4 @@ export class ClustersController {
     async DeleteCluster(@Param('formatName') formatName) {
         return this.clustersService.deleteClusterByFormatname(formatName);
     }
-
-    
 }

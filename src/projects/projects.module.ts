@@ -1,17 +1,25 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { ProjectsController } from './projects.controller';
 
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { Project } from './project.entity';
 import { ProjectsService } from './projects.service';
 
+import { CommonModule }   from '../common/common.module';
 import { RolesModule }    from '../roles/roles.module';
 import { UsersModule }    from '../users/users.module';
 import { ClustersModule } from '../clusters/clusters.module';
 
 @Module({
+  imports: [
+    CommonModule,
+    RolesModule, 
+    UsersModule, 
+    ClustersModule, 
+    TypeOrmModule.forFeature([Project])
+  ],
   controllers: [ProjectsController],
-  imports: [RolesModule, UsersModule, ClustersModule, TypeOrmModule.forFeature([Project])],
   providers: [ProjectsService],
   exports: [ProjectsService]
 })
