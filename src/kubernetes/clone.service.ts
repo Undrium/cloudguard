@@ -43,6 +43,10 @@ export class CloneService {
 
         return true;
     }
+
+    async cloneDeployments(namespaceName: string , sourceCluster: Cluster, targetCluster: Cluster, newNamespaceName: string){
+
+    }
     
 
 }

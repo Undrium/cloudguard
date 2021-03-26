@@ -41,18 +41,18 @@ export class ClustersService {
 
 
     async createAKSCluster(clusterData: any) {
-      var specification = clusterData.specification;
+      var cloudguardCluster = {};
       var azureResponse = await this.azureService.createCluster(clusterData);
       // We need a reference somewhere, create it here
       if(clusterData.name){
         try{
-          await this.create({
+          cloudguardCluster = await this.create({
             name: azureResponse.name,
             platform: "KUBERNETES",
             vendor: "AZURE",
             vendorState: "Creating",
             vendorLocation: azureResponse.location,
-            specification: specification
+            specification: clusterData.specification
           });
         }catch(error){
           // Fallback!
@@ -60,7 +60,7 @@ export class ClustersService {
         }
       }
 
-      return clusterData;
+      return cloudguardCluster;
     }
 
     async getAKSCluster(name: string) {

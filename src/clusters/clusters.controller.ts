@@ -52,22 +52,22 @@ export class ClustersController {
     @Post('/aks')
     async createAksCluster(@Body() clusterData: any) {
         try{
-            var response = await this.clustersService.createAKSCluster(clusterData);
+            var cluster = await this.clustersService.createAKSCluster(clusterData);
         }catch(error){
             throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return this.responseService.createResponse(response, "Started creating cluster in Azure.");
+        return this.responseService.createResponse(cluster, "Started creating cluster in Azure.");
     }
 
     @UseGuards(MustHaveJwtGuard)
     @Get('/aks/:name')
     async getAksCluster(@Param('name') name) {
         try{
-            var response = await this.clustersService.getAKSCluster(name);
+            var cluster = await this.clustersService.getAKSCluster(name);
         }catch(error){
             throw new HttpException("Azure did not like the request", HttpStatus.NOT_FOUND);
         }
-        return this.responseService.createResponse(response, "Fetched cluster from Azure.");
+        return this.responseService.createResponse(cluster, "Fetched cluster from Azure.");
     }
 
     @UseGuards(MustHaveJwtGuard)
@@ -120,8 +120,8 @@ export class ClustersController {
     @UseGuards(MustHaveJwtGuard)
     @Post('')
     async create(@Body() clusterPostDto: ClusterPostDto) {
-        var response = await this.clustersService.createByPost(clusterPostDto);
-        return this.responseService.createResponse(response, "Created cluster.");
+        var cluster = await this.clustersService.createByPost(clusterPostDto);
+        return this.responseService.createResponse(cluster, "Created cluster.");
     }
 
     @UseGuards(MustHaveJwtGuard)
