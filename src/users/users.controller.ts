@@ -1,9 +1,10 @@
 import { Controller, Get, Body, Patch, Param, Post, Delete, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard }     from '../auth/jwt-auth.guard';
+import { MustHaveJwtGuard }     from '../auth/must-have-jwt.guard';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository }       from 'typeorm';
 
-import { LoggerService } from '../common/logger.service';
+import { LoggerService }            from '../common/logger.service';
+import { ResponseService }          from '../common/response.service';
 
 import { User }                 from './user.entity';
 import { User as UserDec }      from './user.decorator';
@@ -16,51 +17,59 @@ export class UsersController {
     constructor(
         @InjectRepository(User)
         private usersRepository: Repository<User>,
-        private usersService: UsersService
+        private usersService: UsersService,
+        private responseService: ResponseService
     ) {}
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(MustHaveJwtGuard)
     @Get()
-    async findAll(): Promise<User[]> {
+    async findAll(): Promise<any> {
         this.logger.verbose("Finding all users");
-        return this.usersRepository.find({relations: ["projectRoles", "projectRoles.project", "projectRoles.role", "preferences"]});
+        var users = await this.usersRepository.find({relations: ["projectRoles", "projectRoles.project", "projectRoles.role", "preferences"]});
+        return this.responseService.createResponse(users, "Found all users.");
     }
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(MustHaveJwtGuard)
     @Post()
     async create(@Body() userPostDto: UserPostDto) {
-        return this.usersService.createByDto(userPostDto);
+        var user = await this.usersService.createByDto(userPostDto);
+        return this.responseService.createResponse(user, "Created user.");
     }
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(MustHaveJwtGuard)
     @Patch('/preferences')
     async updatePreferences(@UserDec() user, @Body() preferences: any) {
-        return this.usersService.updatePreferences(user.username, preferences);
+        var response = await this.usersService.updatePreferences(user.username, preferences);
+        return this.responseService.createResponse(response, "Updated preferences for user.");
     }
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(MustHaveJwtGuard)
     @Patch(':username')
     async update(@Param('username') username, @Body() userPostDto: UserPostDto) {
-        return this.usersService.updateByDto(username, userPostDto);
+        var response = await this.usersService.updateByDto(username, userPostDto);
+        return this.responseService.createResponse(response, "Updated user.");
     }
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(MustHaveJwtGuard)
     @Get('/count')
-    async count(): Promise<Number> {
+    async count(): Promise<any> {
         this.logger.verbose("Counting users");
-        return this.usersRepository.count();
+        var count = await this.usersRepository.count();
+        return this.responseService.createResponse(count, "Counted users.");
     }
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(MustHaveJwtGuard)
     @Get(':username')
     async fetchOne(@Param('username') username) {
-        return this.usersService.getDtoByUsername(username);
+        var user = await this.usersService.getDtoByUsername(username);
+        return this.responseService.createResponse(user, "Got user.");
     }
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(MustHaveJwtGuard)
     @Delete(':username')
     async delete(@Param('username') username) {
-        return await this.usersRepository.delete({username: username});
+        var response = await this.usersRepository.delete({username: username});
+        return this.responseService.createResponse(response, "Deleted user.");
     }
 
     

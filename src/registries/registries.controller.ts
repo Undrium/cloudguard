@@ -4,8 +4,9 @@ import { ConfigService } from '@nestjs/config';
 import { Logger } from '@nestjs/common';
 
 import { Repository } from 'typeorm';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { MustHaveJwtGuard } from '../auth/must-have-jwt.guard';
 
+import { ResponseService }  from '../common/response.service';
 import { RegistriesService } from './registries.service';
 import { Registry } from './registry.entity';
 import { RegistryPostDto } from './registry-post.dto';
@@ -18,39 +19,45 @@ export class RegistriesController {
         private configService: ConfigService,
         @InjectRepository(Registry)
         private registryRepository: Repository<Registry>,
-        private registriesService: RegistriesService
+        private registriesService: RegistriesService,
+        private responseService: ResponseService
     ) {}
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(MustHaveJwtGuard)
     @Get()
-    async findAll(): Promise<Registry[]> {
+    async findAll(): Promise<any> {
         this.logger.verbose("Finding all Registries");
-        return this.registryRepository.find();
+        var response = await this.registryRepository.find();
+        return this.responseService.createResponse(response, "Found all registries.");
     }
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(MustHaveJwtGuard)
     @Get('/count')
-    async count(): Promise<Number> {
+    async count(): Promise<any> {
         this.logger.verbose("Counting registries");
-        return this.registryRepository.count();
+        var count = await this.registryRepository.count();
+        return this.responseService.createResponse(count, "Counted registries.");
     }
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(MustHaveJwtGuard)
     @Get(':formatName')
-    async findOne(@Param('formatName') formatName): Promise<Registry> {
-        return this.registryRepository.findOne({ formatName: formatName });
+    async findOne(@Param('formatName') formatName): Promise<any> {
+        var response = await this.registryRepository.findOne({ formatName: formatName });
+        return this.responseService.createResponse(response, "Found registry.");
     }
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(MustHaveJwtGuard)
     @Post()
     async create(@Body() registryPostDto:RegistryPostDto) {
-        return this.registriesService.create(registryPostDto);
+        var response = await this.registriesService.create(registryPostDto);
+        return this.responseService.createResponse(response, "Created registry.");
     }
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(MustHaveJwtGuard)
     @Delete(':formatName')
     async DeleteRegistry(@Param('formatName') formatName) {
-        return this.registriesService.deleteRegistryByFormatName(formatName);
+        var response = await this.registriesService.deleteRegistryByFormatName(formatName);
+        return this.responseService.createResponse(response, "Deleted registry.");
     }
 
     

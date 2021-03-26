@@ -1,11 +1,13 @@
 import { Controller, Post, Get, Delete, Patch, Body, Param, UseGuards, OnModuleInit } from '@nestjs/common';
 import { Logger } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { MustHaveJwtGuard } from '../auth/must-have-jwt.guard';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { Repository } from 'typeorm';
 
 import { Project } from '../projects/project.entity';
+
+import { ResponseService }      from '../common/response.service';
 
 import { ClustersService }      from '../clusters/clusters.service';
 import { UsersService }         from '../users/users.service';
@@ -26,7 +28,8 @@ export class SandboxController implements OnModuleInit{
         private projectRolesService: ProjectRolesService,
         private rolesService: RolesService,
         private usersService: UsersService,
-        private azureService: AzureService
+        private azureService: AzureService,
+        private responseService: ResponseService,
     ) {}
 
     async onModuleInit() {

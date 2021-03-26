@@ -1,8 +1,10 @@
 import { Controller, Post, Get, Delete, Patch, Body, Param, UseGuards, OnModuleInit } from '@nestjs/common';
 import { Logger } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { MustHaveJwtGuard } from '../auth/must-have-jwt.guard';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+
+import { ResponseService }  from '../common/response.service';
 
 import { ProjectRole } from './project-role.entity';
 import { ProjectRolePostDto } from './project-role-post.dto';
@@ -18,31 +20,36 @@ export class ProjectRolesController {
         @InjectRepository(ProjectRole)
         private projectRolesRepository: Repository<ProjectRole>,
         private projectRolesService: ProjectRolesService,
+        private responseService: ResponseService,
     ) {}
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(MustHaveJwtGuard)
     @Get()
-    async findAll(): Promise<ProjectRole[]> {
+    async findAll(): Promise<any> {
         this.logger.verbose("Finding all project-roles");
-        return this.projectRolesRepository.find();
+        var projects = await this.projectRolesRepository.find();
+        return this.responseService.createResponse(projects, "Got all project roles.");
     }
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(MustHaveJwtGuard)
     @Post('')
     async create(@Body() postDto: ProjectRolePostDto) {
-        return this.projectRolesService.create(postDto);
+        var response = await this.projectRolesService.create(postDto);
+        return this.responseService.createResponse(response, "Created project role.");
     }
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(MustHaveJwtGuard)
     @Patch(':projectRoleId')
     async update(@Param('projectRoleId') projectRoleId, @Body() postDto: ProjectRolePostDto) {
-        return this.projectRolesService.create(postDto);
+        var response = await this.projectRolesService.create(postDto);
+        return this.responseService.createResponse(response, "Updated project role.");
     }
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(MustHaveJwtGuard)
     @Delete(':projectRoleId')
     async delete(@Param('projectRoleId') projectRoleId) {
-        return await this.projectRolesRepository.delete({id: projectRoleId});
+        var response = await this.projectRolesRepository.delete({id: projectRoleId});
+        return this.responseService.createResponse(response, "Deleted project role.");
     }
 
 }

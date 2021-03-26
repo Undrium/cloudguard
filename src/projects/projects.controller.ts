@@ -1,7 +1,7 @@
 import { Controller, Post, Get, Delete, Patch, Body, Param, UseGuards, OnModuleInit } from '@nestjs/common';
 import { Logger } from '@nestjs/common';
 
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { MustHaveJwtGuard } from '../auth/must-have-jwt.guard';
 import { ProjectRolesGuard } from '../auth/project-roles.guard';
 import { ProjectRoles } from '../auth/project-roles.decorator';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -13,6 +13,7 @@ import { Repository } from 'typeorm';
 import { Project } from './project.entity';
 import { ProjectPostDto } from './project-post.dto';
 
+import { ResponseService }  from '../common/response.service';
 import { ProjectsService } from './projects.service';
 import { ClustersService } from '../clusters/clusters.service';
 
@@ -25,67 +26,77 @@ export class ProjectsController{
         @InjectRepository(Project)
         private projectsRepository: Repository<Project>,
         private projectsService: ProjectsService,
-        private clustersService: ClustersService
+        private clustersService: ClustersService,
+        private responseService: ResponseService
     ) {}
   
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(MustHaveJwtGuard)
     @Post('')
     async create(@Body() projectPost: any) {
-        return this.projectsService.create(projectPost);
+        var response = await this.projectsService.create(projectPost);
+        return this.responseService.createResponse(response, "Created project.");
     }
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(MustHaveJwtGuard)
     @Get()
-    async findAll(): Promise<Project[]> {
+    async findAll(): Promise<any> {
         this.logger.verbose("Finding all projects");
-        return this.projectsRepository.find({relations: ["projectRoles", "projectRoles.user", "projectRoles.role"]});
+        var response = await this.projectsRepository.find({relations: ["projectRoles", "projectRoles.user", "projectRoles.role"]});
+        return this.responseService.createResponse(response, "Found all projects.");
     }
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(MustHaveJwtGuard)
     @Get('/count')
-    async count(): Promise<Number> {
+    async count(): Promise<any> {
         this.logger.verbose("Counting projects");
-        return this.projectsRepository.count();
+        var count = await this.projectsRepository.count();
+        return this.responseService.createResponse(count, "Counted projects.");
     }
 
-    @UseGuards(JwtAuthGuard, ProjectRolesGuard)
+    @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)
     @Get(':projectFormatName/clusters/:clusterFormatName/personal-token')
     @ProjectRoles(['edit', 'view', 'admin'])
     async getClusterToken(@Param('projectFormatName') projectFormatName, @Param('clusterFormatName') clusterFormatName, @User() user): Promise<any> {
-        return this.clustersService.getProjectCluster(projectFormatName, clusterFormatName, user.username);
+        var response = await this.clustersService.getProjectCluster(projectFormatName, clusterFormatName, user.username);
+        return this.responseService.createResponse(response, "Got project cluster token.");
     }
 
-    @UseGuards(JwtAuthGuard, ProjectRolesGuard)
+    @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)
     @Get(':projectFormatName/clusters/:clusterFormatName')
     @ProjectRoles(['edit', 'view', 'admin'])
     async findClusterToProject(@Param('projectFormatName') projectFormatName, @Param('clusterFormatName') clusterFormatName, @User() user): Promise<any> {
-        return this.clustersService.getProjectCluster(projectFormatName, clusterFormatName, user.username);
+        var response = await this.clustersService.getProjectCluster(projectFormatName, clusterFormatName, user.username);
+        return this.responseService.createResponse(response, "Got project cluster.");
     }
 
-    @UseGuards(JwtAuthGuard, ProjectRolesGuard)
+    @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)
     @Get(':projectFormatName/clusters/')
     @ProjectRoles(['edit', 'view', 'admin'])
     async findClustersToProject(@Param('projectFormatName') formatName): Promise<any> {
-        return this.clustersService.getProjectClusters(formatName);
+        var clusters = await this.clustersService.getProjectClusters(formatName); 
+        return this.responseService.createResponse(clusters, "Got project clusters.");
     }
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(MustHaveJwtGuard)
     @Get(':projectFormatName')
     async findOne(@Param('projectFormatName') formatName): Promise<any> {
-        return this.projectsRepository.findOne({formatName: formatName}, {relations: ["projectRoles", "projectRoles.user", "projectRoles.role"]});
+        var project = await this.projectsRepository.findOne({formatName: formatName}, {relations: ["projectRoles", "projectRoles.user", "projectRoles.role"]});
+        return this.responseService.createResponse(project, "Got project.");
     }
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(MustHaveJwtGuard)
     @Delete(':projectFormatName')
     async delete(@Param('projectFormatName') formatName) {
-        return await this.projectsRepository.delete({formatName: formatName});
+        var response = await this.projectsRepository.delete({formatName: formatName});
+        return this.responseService.createResponse(response, "Deleted project.");
     }
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(MustHaveJwtGuard)
     @Patch(':projectFormatName')
     async update(@Param('projectFormatName') formatName, @Body() projectPostDto: ProjectPostDto) {
-        return this.projectsService.updateByDto(formatName, projectPostDto);
+        var response = await this.projectsService.updateByDto(formatName, projectPostDto);
+        return this.responseService.createResponse(response, "Updated project.");
     }
     
 }
