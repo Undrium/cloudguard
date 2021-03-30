@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Delete, Patch, Body, Param, UseGuards, OnModuleInit } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Patch, Body, Param, UseGuards, OnModuleInit, HttpException, HttpStatus } from '@nestjs/common';
 import { Logger } from '@nestjs/common';
 
 import { MustHaveJwtGuard } from '../auth/must-have-jwt.guard';
@@ -14,6 +14,7 @@ import { Project } from './project.entity';
 import { ProjectPostDto } from './project-post.dto';
 
 import { ResponseService }  from '../common/response.service';
+import { CloneService }     from '../kubernetes/clone.service';
 import { ProjectsService } from './projects.service';
 import { ClustersService } from '../clusters/clusters.service';
 
@@ -26,6 +27,7 @@ export class ProjectsController{
         @InjectRepository(Project)
         private projectsRepository: Repository<Project>,
         private projectsService: ProjectsService,
+        private cloneService: CloneService,
         private clustersService: ClustersService,
         private responseService: ResponseService
     ) {}
@@ -76,6 +78,40 @@ export class ProjectsController{
     async findClustersToProject(@Param('projectFormatName') formatName): Promise<any> {
         var clusters = await this.clustersService.getProjectClusters(formatName); 
         return this.responseService.createResponse(clusters, "Got project clusters.");
+    }
+
+    @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)
+    @Get(':projectFormatName/clusters/:clusterFormatName/namespaces')
+    @ProjectRoles(['edit', 'view', 'admin'])
+    async getProjectsClustersNamespaces(@Param('projectFormatName') projectFormatName, @Param('clusterFormatName') clusterFormatName, @User() user): Promise<any> {
+        var response = await this.clustersService.getProjectsClustersNamespaces(projectFormatName, clusterFormatName);
+        return this.responseService.createResponse(response, "Got project cluster namespaces.");
+    }
+
+    @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)
+    @Post(':projectFormatName/clusters/:sourceClusterformatName/namespaces/:namespaceFormatName/clone')
+    @ProjectRoles(['edit', 'view', 'admin'])
+    async clone(
+        @Param('projectFormatName') projectFormatName, 
+        @Param('sourceClusterformatName') sourceClusterformatName, 
+        @Param('namespaceFormatName') namespaceFormatName, 
+        @Body() cloneData: any
+    ) {
+        var sourceCluster = await this.clustersService.getCluster(sourceClusterformatName);
+        var targetCluster = await this.clustersService.getCluster(cloneData.targetClusterFormatName);
+        
+        try{
+            await this.cloneService.cloneNamespaceAndContent(
+                namespaceFormatName, 
+                sourceCluster, 
+                targetCluster, 
+                cloneData
+            );
+        }catch(error){
+            throw new HttpException(error, HttpStatus.METHOD_NOT_ALLOWED);
+        }
+
+        return this.responseService.createResponse(true, "Clone was succesful.");
     }
 
     @UseGuards(MustHaveJwtGuard)

@@ -137,11 +137,19 @@ export class ClustersService {
       
       var user = await this.usersRepository.findOne({username: username});
       
-      clusterGetDto.namespaces = await this.rbacService.getNamespacesForProjectAndCluster(project, cluster);
       clusterGetDto.personalToken = await this.rbacService.getClusterToken(project, cluster, user);
       clusterGetDto.dashboardUrl = await this.kubernetesService.getDashboardUrl(cluster);
       
       return clusterGetDto;
+    }
+
+    async getProjectsClustersNamespaces(projectFormatName: string, clusterFormatName: string): Promise<any>{
+
+      var project = await this.projectsService.getByFormatName(projectFormatName);
+      var cluster = await this.clusterRepository.findOne({formatName: clusterFormatName});
+
+      return await this.rbacService.getProjectsClustersNamespaces(project, cluster);
+
     }
 
     async getPersonalToken(projectFormatName: string, formatName: string, username: string ): Promise<string>{

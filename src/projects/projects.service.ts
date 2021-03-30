@@ -49,9 +49,7 @@ export class ProjectsService {
         project = await this.update(project, projectData);
       }
       return project;
-    }
-
-   
+    } 
 
     async generateFormatName(cluster: any, iteration: number = 0){
       let formatName: string = cluster.name;

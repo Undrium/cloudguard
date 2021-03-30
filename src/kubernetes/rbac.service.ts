@@ -47,7 +47,7 @@ export class RbacService {
         return "";
     }
 
-    async getNamespacesForProjectAndCluster(project: Project, cluster: Cluster): Promise<any[]>{
+    async getProjectsClustersNamespaces(project: Project, cluster: Cluster): Promise<any[]>{
         var namespaces = [];
         var client = this.clientService.createClient(cluster);
         const projectConfig = this.configService.get<any>('project');
@@ -74,7 +74,7 @@ export class RbacService {
             return false;
         }
         
-        var namespaces = await this.getNamespacesForProjectAndCluster(project, cluster);
+        var namespaces = await this.getProjectsClustersNamespaces(project, cluster);
         var namespaceUpdates = [];
         // await this.displayRoleBindingsForServiceAccount(cluster, serviceAccount);
         for(var namespace of namespaces){

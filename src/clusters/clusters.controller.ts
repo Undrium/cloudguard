@@ -98,26 +98,6 @@ export class ClustersController {
     }
 
     @UseGuards(MustHaveJwtGuard)
-    @Post(':sourceClusterformatName/namespaces/:namespaceFormatName/clone')
-    async clone(@Param('sourceClusterformatName') sourceClusterformatName, @Param('namespaceFormatName') namespaceFormatName, @Body() cloneData: any) {
-        var sourceCluster = await this.clustersService.getCluster(sourceClusterformatName);
-        var targetCluster = await this.clustersService.getCluster(cloneData.targetClusterFormatName);
-        
-        try{
-            await this.cloneService.cloneNamespaceAndContent(
-                namespaceFormatName, 
-                sourceCluster, 
-                targetCluster, 
-                cloneData
-            );
-        }catch(error){
-            throw new HttpException(error, HttpStatus.METHOD_NOT_ALLOWED);
-        }
-
-        return this.responseService.createResponse(true, "Clone was succesful.");
-    }
-
-    @UseGuards(MustHaveJwtGuard)
     @Post('')
     async create(@Body() clusterPostDto: ClusterPostDto) {
         var cluster = await this.clustersService.createByPost(clusterPostDto);
