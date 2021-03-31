@@ -43,6 +43,13 @@ export class AuthService {
         return clientUser;
     }
 
+    async heartbeat(user: any){
+        let clientUser: UserGetDto = await this.usersService.createClientUser(user.username);
+        const payload = { username: user.username, sub: clientUser.id };
+        clientUser.token = this.jwtService.sign(payload);
+        return clientUser;
+    }
+
     async authenticateThroughMemory(username: string, password: string): Promise<any>{
         var memoryUsers = await this.usersService.getMemoryUsers();
         for(let memoryUser of memoryUsers){

@@ -3,6 +3,8 @@ import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { AuthService }      from '../auth/auth.service';
 import { ResponseService }  from '../common/response.service';
 
+import { User } from '../users/user.decorator';
+
 import { AuthDto }          from '../auth/auth.dto';
 import { LocalAuthGuard }   from '../auth/local-auth.guard';
 import { MustHaveJwtGuard }     from './must-have-jwt.guard';
@@ -20,8 +22,9 @@ export class AuthController {
     }
 
     @UseGuards(MustHaveJwtGuard)
-    @Post('/refresh')
-    async refresh() {
-        return this.responseService.createResponse(true, "Refreshed.");
+    @Post('/heartbeat')
+    async refresh(@User() user) {
+        var response = await this.authService.heartbeat(user);
+        return this.responseService.createResponse(response, "Refreshed.");
     }
 }

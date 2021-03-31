@@ -16,6 +16,10 @@ export class KubernetesService {
         return cluster.apiServer + "/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/"
     }
 
+    async createClientByType(typeName: string, cluster: Cluster){
+        return this.clientService.createClientByType(typeName, cluster);
+    }
+
     async getNamespaces(cluster: Cluster): Promise<any[]>{
         var namespaces = [];
         var client = this.clientService.createClient(cluster);

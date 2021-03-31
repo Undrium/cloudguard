@@ -13,19 +13,24 @@ export class ClientService {
 
     constructor(private configService: ConfigService) {}
 
-    createRbacClient(cluster: Cluster){
-        var kubeConfig = this.createKubeConfig(cluster);
-        return kubeConfig.makeApiClient(k8s.RbacAuthorizationV1Api);
-    }
-
     createClient(cluster: Cluster){
         var kubeConfig = this.createKubeConfig(cluster);
         return kubeConfig.makeApiClient(k8s.CoreV1Api);
     }
 
+    createRbacClient(cluster: Cluster){
+        var kubeConfig = this.createKubeConfig(cluster);
+        return kubeConfig.makeApiClient(k8s.RbacAuthorizationV1Api);
+    }
+
     createObjectClient(cluster: Cluster){
         var kubeConfig = this.createKubeConfig(cluster);
         return k8s.KubernetesObjectApi.makeApiClient(kubeConfig);
+    }
+
+    createClientByType(typeName: string, cluster: Cluster){
+        var kubeConfig = this.createKubeConfig(cluster);
+        return kubeConfig.makeApiClient(k8s[typeName]);
     }
 
     createKubeConfig(cluster: Cluster){

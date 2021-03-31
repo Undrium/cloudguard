@@ -115,6 +115,7 @@ export class UsersService {
     async UserIsAllowed(username: string, projectFormatName: string, allowedRoles: string[]): Promise<boolean>{
         var user = await this.getByUsername(username, ["projectRoles", "projectRoles.project", "projectRoles.role"]);
         if(!user){
+            this.logger.verbose("Could not find user " + username + " therefor failing guard check.");
             return false;
         }
         if(user.usertype == 'admin'){
@@ -130,6 +131,7 @@ export class UsersService {
                 }
             }
         }
+        this.logger.verbose("User is not allowed: " + username);
         return false;
     }
 
