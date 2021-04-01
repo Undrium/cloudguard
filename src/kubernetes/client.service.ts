@@ -14,13 +14,11 @@ export class ClientService {
     constructor(private configService: ConfigService) {}
 
     createClient(cluster: Cluster){
-        var kubeConfig = this.createKubeConfig(cluster);
-        return kubeConfig.makeApiClient(k8s.CoreV1Api);
+        return this.createClientByType("CoreV1Api", cluster);
     }
 
     createRbacClient(cluster: Cluster){
-        var kubeConfig = this.createKubeConfig(cluster);
-        return kubeConfig.makeApiClient(k8s.RbacAuthorizationV1Api);
+        return this.createClientByType("RbacAuthorizationV1Api", cluster);
     }
 
     createObjectClient(cluster: Cluster){
@@ -30,7 +28,12 @@ export class ClientService {
 
     createClientByType(typeName: string, cluster: Cluster){
         var kubeConfig = this.createKubeConfig(cluster);
-        return kubeConfig.makeApiClient(k8s[typeName]);
+        try{
+            return kubeConfig.makeApiClient(k8s[typeName]);
+        }catch(error){
+            this.logger.error(`API Type "${typeName}" doesn't seem to be available from the Kube SDK`, error);
+            return false;
+        }
     }
 
     createKubeConfig(cluster: Cluster){

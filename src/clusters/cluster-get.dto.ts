@@ -20,11 +20,11 @@ export class ClusterGetDto {
   @ApiProperty({ example: 'Platform name' })
   public platform: string;
 
-  @ApiProperty({ example: 'Namespaces available to this cluster' })
-  public namespaces: any[];
+  @ApiProperty({ example: '1.17.1' })
+  public vendor: string;
 
   @ApiProperty({ example: 'Azure or Amazon for instance' })
-  public vendor: string;
+  public platformVersionInfo: any;
 
   @ApiProperty({ example: 'Clusters state at the vendor' })
   public vendorState: string;
@@ -43,6 +43,7 @@ export class ClusterGetDto {
     this.formatName = cluster.formatName;
     this.apiServer = cluster.apiServer;
     this.platform = cluster.platform;
+    this.platformVersionInfo = cluster.platformVersionInfo;
     this.vendor = cluster.vendor;
     this.vendorState = cluster.vendorState;
     this.vendorLocation = cluster.vendorLocation;

@@ -20,6 +20,25 @@ export class KubernetesService {
         return this.clientService.createClientByType(typeName, cluster);
     }
 
+    async hasKubernetesAccess(cluster: Cluster){
+        if(!cluster || !cluster.token || !cluster.apiServer){
+            return false;
+        }
+        try{
+            var versionInfo = await this.getKubernetesVersionInfo(cluster);
+            return versionInfo ? true : false;
+        }catch(error){
+            this.logger.verbose(error);
+        }
+        return false;
+    }
+
+    async getKubernetesVersionInfo(cluster: Cluster){
+        var client = await this.createClientByType("VersionApi", cluster);
+        var response = await client.getCode();
+        return response.body || null;
+    }
+
     async getNamespaces(cluster: Cluster): Promise<any[]>{
         var namespaces = [];
         var client = this.clientService.createClient(cluster);
@@ -86,6 +105,9 @@ export class KubernetesService {
         return null;
     }
 
+    /*
+    * Apply specifications (of resources) to a cluster
+    */
     async apply(cluster: any, specs: any[]): Promise<any[]> {
         const client = this.clientService.createObjectClient(cluster);
 

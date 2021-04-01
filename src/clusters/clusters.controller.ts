@@ -92,16 +92,16 @@ export class ClustersController {
 
     @UseGuards(MustHaveJwtGuard)
     @Patch(':formatName')
-    async update(@Param('formatName') formatName, @Body() clusterPostDto: ClusterPatchDto) {
-        var result = await this.clustersService.updateByPatch(formatName, clusterPostDto);
+    async update(@Param('formatName') formatName, @Body() clusterPatchDto: ClusterPatchDto) {
+        var result = await this.clustersService.updateByPatch(formatName, clusterPatchDto);
         return this.responseService.createResponse(result, "Patching went good.");
     }
 
     @UseGuards(MustHaveJwtGuard)
     @Post('')
-    async create(@Body() clusterPostDto: ClusterPostDto) {
-        var cluster = await this.clustersService.createByPost(clusterPostDto);
-        return this.responseService.createResponse(cluster, "Created cluster.");
+    async createExisting(@Body() clusterPostDto: ClusterPostDto) {
+        var cluster = await this.clustersService.createExisting(clusterPostDto);
+        return this.responseService.createResponse(cluster, "Created existing cluster.");
     }
 
     @UseGuards(MustHaveJwtGuard)

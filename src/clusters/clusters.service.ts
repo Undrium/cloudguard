@@ -66,14 +66,13 @@ export class ClustersService {
     async getAKSCluster(name: string) {
       var azureCluster = await this.azureService.getCluster(name);
       // This is for updating the reference status so we won't spam Azure in vain
-      if(
-        azureCluster && azureCluster.properties && azureCluster.properties.provisioningState 
-        && azureCluster.properties.provisioningState != "Creating"){
+      if(azureCluster?.properties?.provisioningState != "Creating"){
         var cluster = await this.getCluster(name);
         // Really important to make sure the cluster has standards configurated for the enterprise
         cluster = await this.azureService.postProvisionModifiyCluster(cluster, azureCluster);
-        if(cluster){
-          await this.update(cluster);
+        // Also do internal updates when cluster is done
+        if(await this.kubernetesService.hasKubernetesAccess(cluster)){
+          cluster = await this.postProvisionModifiyCluster(cluster);
         }
       }
       return azureCluster;
@@ -90,6 +89,15 @@ export class ClustersService {
       return deleted;
     }
 
+    /*
+    * This is done to all added clusters when they are known to have been provisioned (out of creation stage)
+    */
+    async postProvisionModifiyCluster(cluster: Cluster){
+      var versionInfo = await this.kubernetesService.getKubernetesVersionInfo(cluster);
+      cluster.platformVersionInfo = versionInfo;
+      return await this.update(cluster);
+    }
+
     async create(clusterData: any){
       clusterData['formatName'] = await this.generateFormatName(clusterData);
       return this.clusterRepository.save(clusterData);
@@ -100,9 +108,17 @@ export class ClustersService {
       return this.clusterRepository.save(clusterData);
     }
 
-    async createByPost(clusterData: ClusterPostDto){
+    /*
+    * This creates a reference to an already existing cluster in CloudGuard
+    */
+    async createExisting(clusterData: ClusterPostDto){
         clusterData['formatName'] = await this.generateFormatName(clusterData);
-        return this.clusterRepository.save(clusterData);
+        var cluster = await this.clusterRepository.save(clusterData);
+
+        if(await this.kubernetesService.hasKubernetesAccess(cluster)){
+          cluster = await this.postProvisionModifiyCluster(cluster);
+        }
+        return cluster;
     }
 
     async updateByPatch(formatName: string, clusterData: ClusterPatchDto){
@@ -137,8 +153,10 @@ export class ClustersService {
       
       var user = await this.usersRepository.findOne({username: username});
       
-      clusterGetDto.personalToken = await this.rbacService.getClusterToken(project, cluster, user);
-      clusterGetDto.dashboardUrl = await this.kubernetesService.getDashboardUrl(cluster);
+      if(await this.kubernetesService.hasKubernetesAccess(cluster)){
+        clusterGetDto.personalToken = await this.rbacService.getClusterToken(project, cluster, user);
+        clusterGetDto.dashboardUrl = await this.kubernetesService.getDashboardUrl(cluster);
+      }
       
       return clusterGetDto;
     }

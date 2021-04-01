@@ -10,7 +10,7 @@ export class LocalAuthGuard extends AuthGuard('local') {
     canActivate(context: ExecutionContext) {
         const request = context.switchToHttp().getRequest();
         
-        this.logger.debug("Can activate " + context.getClass().name + " " + context.getHandler().name);
+        this.logger.debug("Validating if user can " + context.getClass().name + " " + context.getHandler().name);
         
         return super.canActivate(context);
     }

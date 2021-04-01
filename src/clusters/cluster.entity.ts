@@ -23,6 +23,9 @@ export class Cluster {
     @Column({ default: "KUBERNETES" })
     platform: string;
 
+    @Column('jsonb', {nullable: true})
+    platformVersionInfo?: object;
+
     @Column({ default: "LOCAL" })
     vendor: string;
 
