@@ -95,7 +95,8 @@ export class ProjectsController{
         @Param('projectFormatName') projectFormatName, 
         @Param('sourceClusterformatName') sourceClusterformatName, 
         @Param('namespaceFormatName') namespaceFormatName, 
-        @Body() cloneData: any
+        @Body() cloneData: any,
+        @User() user
     ) {
 
         var sourceCluster = await this.clustersService.getCluster(sourceClusterformatName);
@@ -111,7 +112,9 @@ export class ProjectsController{
         }catch(error){
             throw new HttpException(error, HttpStatus.METHOD_NOT_ALLOWED);
         }
-
+        // Finally, do the cluster routine to make sure access is correct in cloned
+        var response = await this.clustersService.getProjectCluster(projectFormatName, targetCluster.formatName, user.username);
+        
         return this.responseService.createResponse(true, "Clone was succesful.");
     }
 

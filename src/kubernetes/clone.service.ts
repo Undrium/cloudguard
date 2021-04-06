@@ -37,6 +37,11 @@ export class CloneService {
         
         var deploymentsBlueprint = this.createBlueprint("deployments", sourceNamespaceName, sourceCluster, targetCluster, options);
         var result = await this.executeCloneBlueprint(deploymentsBlueprint);
+
+        this.logger.debug(`Attempting to clone ingresses from ${sourceCluster.formatName} to ${targetCluster.formatName}`);
+        
+        var ingressBlueprint = this.createBlueprint("ingresses", sourceNamespaceName, sourceCluster, targetCluster, options);
+        var result = await this.executeCloneBlueprint(ingressBlueprint);
         
         return resource;
     }
@@ -50,6 +55,7 @@ export class CloneService {
         blueprint["sourceCluster"] = sourceCluster;
         blueprint["sourceNamespaceName"] = sourceNamespaceName;
         blueprint["targetNamespaceName"] =  options['targetNamespaceName'] || sourceNamespaceName;
+        this.verifyBlueprint(blueprint);
         return blueprint;
     }
 
@@ -57,10 +63,21 @@ export class CloneService {
         var sourceCluster = blueprint['sourceCluster'];
         var sourceResources: any = [];
 
-        if(blueprint['list']){
+        if(blueprint['readListAction']){
             this.logger.debug(`Listing ${blueprint['type']} from ${sourceCluster.formatName}`);
             var sourceResourceList = await this.readResources(blueprint["sourceNamespaceName"], blueprint, sourceCluster);
-            sourceResources = sourceResourceList.items || [];
+            var responseList = sourceResourceList.items || [];
+            // Since lists are shallow, fetch the detailed one if present
+            if(blueprint['readAction']){
+                for(var shallowResource of responseList){
+                    var singleSourceResource = await this.readResource(blueprint["sourceNamespaceName"], blueprint, sourceCluster, shallowResource?.metadata?.name);
+                    sourceResources.push(singleSourceResource);
+                }
+            }else{
+                // We do not have a readaction for single resources, save the list and copy that one
+                this.logger.debug(`Missing single read of resource type ${blueprint['type']}, copying shallow list instead`);
+                sourceResources = responseList;
+            }
         }else{
             this.logger.debug(`Reading one ${blueprint['type']} from ${sourceCluster.formatName}`);
             var singleSourceResource = await this.readResource(blueprint["sourceNamespaceName"], blueprint, sourceCluster, "");
@@ -68,12 +85,17 @@ export class CloneService {
         }
 
         var result = [];
-        for(var sourceResource of sourceResources){
-            if(blueprint.modifyBeforeUpdate){
-                sourceResource = blueprint.modifyBeforeUpdate(sourceResource, blueprint);
+        if(!sourceResources.length || sourceResources.length == 0){
+            this.logger.debug(`No resources of type ${blueprint['type']} found, skipping create.`);
+        }else{
+            for(var sourceResource of sourceResources){
+                if(blueprint.modifyBeforeUpdate){
+                    sourceResource = blueprint.modifyBeforeUpdate(sourceResource, blueprint);
+                }
+                var resource = await this.createOrUpsertResource(sourceResource, blueprint);
+                result.push(resource);
             }
-            var resource = await this.createOrUpsertResource(sourceResource, blueprint);
-            result.push(resource);
+            this.logger.debug(`${sourceResources.length} resource${sourceResources.length > 1 ? "s": ""} of type ${blueprint['type']} found and created.`);
         }
         return result;
     }
@@ -107,18 +129,31 @@ export class CloneService {
             try{
                 this.logger.debug(`Patching ${sourceResource.kind || "unknown"} in target ${blueprint['targetCluster'].name}`);
                 const options = { "headers": { "Content-type": k8s.PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH}};
-                modifyResult = await targetClient[blueprint['patchAction']](
-                    blueprint["targetNamespaceName"], 
-                    sourceResource, 
-                    undefined, undefined, undefined, undefined, options
-                    );
+
+                if(blueprint['requiresNamespaceOnModify']){
+                    var name = sourceResource.metadata.name;
+                    modifyResult = await targetClient[blueprint['patchAction']](
+                        name,
+                        blueprint["targetNamespaceName"], 
+                        sourceResource, 
+                        undefined, undefined, undefined, undefined, options
+                        );
+                }else{
+                    modifyResult = await targetClient[blueprint['patchAction']](
+                        blueprint["targetNamespaceName"], 
+                        sourceResource, 
+                        undefined, undefined, undefined, undefined, options
+                        );
+                }
+
             }catch(error){
                 this.logger.handleKubernetesError(error);
             }
         }else{
             try{
                 this.logger.debug(`Inserting ${sourceResource.kind || "unknown"} in target ${blueprint['targetCluster'].name}`);
-                if(blueprint['requiresNamespaceOnCreate']){
+
+                if(blueprint['requiresNamespaceOnModify']){
                     modifyResult = await targetClient[blueprint['createAction']](blueprint["targetNamespaceName"], sourceResource);
                 }else{
                     modifyResult = await targetClient[blueprint['createAction']](sourceResource);
@@ -142,6 +177,7 @@ export class CloneService {
         if(targetResource && blueprint['createOnly']){
             throw blueprint["type"] + " " + targetName + " already exists in target cluster " + blueprint["targetCluster"] .formatName;
         }
+
         var createResult = null;
         try{
             createResult = await targetClient[blueprint['createAction']](resource);
@@ -176,6 +212,7 @@ export class CloneService {
         var resourceList = null;
         try{
             var response = false;
+            // First check if the function even exists
             response = await client[blueprint['readListAction']](namespaceName);
             if(response['body']){
                 resourceList = response['body'];
@@ -185,6 +222,29 @@ export class CloneService {
             return false;
         }
         return resourceList;
+    }
+
+    async verifyBlueprint(blueprint){
+        var sourceClient = await this.kubernetesService.createClientByType(blueprint['client'], blueprint['sourceCluster']);
+        var targetClient = await this.kubernetesService.createClientByType(blueprint['client'], blueprint['targetCluster']);
+        var actionsToTest = ["readListAction", "readAction", "createAction", "patchAction"];
+        for(var action of actionsToTest){
+            var actionFunctionName = blueprint[action];
+            if(actionFunctionName){
+                await this.isKubernetesFunction(sourceClient, actionFunctionName);
+                await this.isKubernetesFunction(targetClient, actionFunctionName);
+            }
+        }
+    }
+
+    async isKubernetesFunction(client, functionName) {
+        if(client[functionName] && {}.toString.call(client[functionName]) === '[object Function]'){
+            return true; 
+        }
+        var error = `${functionName} is not a function in Kubernetes client type ${client.constructor.name}`;
+        this.logger.verbose(error);
+        console.log(client);
+        throw error;
     }
 
 

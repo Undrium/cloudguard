@@ -17,12 +17,32 @@ module.exports.default = {
     },
     "deployments": {
         "client": "AppsV1Api",
-        "list": true,
         "readAction": "readNamespacedDeployment",
         "readListAction": "listNamespacedDeployment",
         "patchAction": "patchNamespacedDeployment",
         "createAction": "createNamespacedDeployment",
-        "requiresNamespaceOnCreate": true,
+        "requiresNamespaceOnModify": true,
+        "createOnly": false,
+        "modifyBeforeUpdate": function(resource, blueprint){
+            delete resource.metadata.resourceVersion;
+            delete resource.metadata.uid;
+            if(blueprint['targetNamespaceName']){
+                resource.metadata.namespace = blueprint['targetNamespaceName'];
+            }
+            return resource;
+        },
+        "getTargetResourceName": function(resource, blueprint){
+            var name = blueprint["newName"] || resource.metadata.name;
+            return name;
+        }
+    },
+    "ingresses": {
+        "client": "NetworkingV1Api",
+        "readAction": "readNamespacedIngress",
+        "readListAction": "listNamespacedIngress",
+        "patchAction": "patchNamespacedIngress",
+        "createAction": "createNamespacedIngress",
+        "requiresNamespaceOnModify": true,
         "createOnly": false,
         "modifyBeforeUpdate": function(resource, blueprint){
             delete resource.metadata.resourceVersion;

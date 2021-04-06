@@ -78,6 +78,8 @@ export class RbacService {
         var namespaceUpdates = [];
         // await this.displayRoleBindingsForServiceAccount(cluster, serviceAccount);
         for(var namespace of namespaces){
+            // Skip if terminating
+            if(namespace?.status?.phase == "Terminating"){continue;}
             namespaceUpdates.push(this.upsertRoleBinding(cluster, namespace.metadata.name, serviceAccount, roleType));
         }
         // Upsert the cluster read node role
