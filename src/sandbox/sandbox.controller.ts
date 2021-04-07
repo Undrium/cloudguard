@@ -11,7 +11,7 @@ import { ResponseService }      from '../common/response.service';
 
 import { ClustersService }      from '../clusters/clusters.service';
 import { UsersService }         from '../users/users.service';
-import { AzureService }         from '../vendors/azure.service';
+import { AzureDataSource }         from '../vendors/azure.data-source';
 import { RolesService }         from '../roles/roles.service';
 import { KubernetesService }    from '../kubernetes/kubernetes.service';
 import { ProjectsService }      from '../projects/projects.service';
@@ -28,7 +28,7 @@ export class SandboxController implements OnModuleInit{
         private projectRolesService: ProjectRolesService,
         private rolesService: RolesService,
         private usersService: UsersService,
-        private azureService: AzureService,
+        private azureDataSource: AzureDataSource,
         private responseService: ResponseService,
     ) {}
 
@@ -45,8 +45,7 @@ export class SandboxController implements OnModuleInit{
         this.projectRolesService.addOrUpdateUserToProject(project3.formatName, user.username, role2.id);
         this.projectRolesService.addOrUpdateUserToProject(project4.formatName, user.username, role3.id);
         var cluster = await this.clustersService.getCluster("minikube");
-
-
+ 
         //var createdClusterName = await this.azureService.createCluster({name: "cloudguard"});
 
         //await this.azureService.deleteCluster("cloudguard-generated");
@@ -60,7 +59,7 @@ export class SandboxController implements OnModuleInit{
     async statusLoop(name: string){
         const self=this;
         console.log("Getting status for " + name +"...");
-        var data = await this.azureService.getCluster(name);
+        var data = await this.azureDataSource.getCluster(name);
 
         if(data && data.properties && data.properties.provisioningState){
             console.log(data.properties.provisioningState);

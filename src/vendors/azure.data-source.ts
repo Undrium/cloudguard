@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { Logger } from '@nestjs/common';
 
 import { AzureConfiguratorService } from './azure-configurator.service';
+import { SimpleConsoleLogger } from 'typeorm';
 
 const axios = require('axios').default;
 const yaml = require('js-yaml');
@@ -11,8 +12,8 @@ const querystring = require('querystring');
 
 
 @Injectable()
-export class AzureService {
-    private readonly logger = new Logger(AzureService.name);
+export class AzureDataSource {
+    private readonly logger = new Logger(AzureDataSource.name);
 
     constructor(
         private configService: ConfigService,
@@ -49,6 +50,23 @@ export class AzureService {
         }catch(error){
             throw this.handleAzureError(error);
         }
+        return response.data || null;
+    }
+
+    async getUpgradeProfile(resourceName: string){
+        var token = await this.authenticate();
+        // TODO Move these
+        var subscriptionId = this.configService.get<string>('aks.subscription');
+        var resourceGroup = this.configService.get<string>('aks.resourceGroup');
+        var url = `https://management.azure.com/subscriptions/${subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.ContainerService/managedClusters/${resourceName}/upgradeProfiles/default?api-version=2020-11-01`;
+        var options = {headers: { Authorization: `Bearer ${token}` }};
+        
+        try{
+            var response = await axios.get(url, options);
+        }catch(error){
+            throw this.handleAzureError(error);
+        }
+        console.log(response.data);
         return response.data || null;
     }
 
@@ -93,6 +111,24 @@ export class AzureService {
         var options = {headers: { Authorization: `Bearer ${token}` }};
         try{
             var response = await axios.put(url, data, options);
+        }catch(error){
+            throw this.handleAzureError(error);
+        }
+        
+        // Response will contain a data object describing the cluster, this will have for instance name
+        return response.data || null;
+    }
+
+    async patchCluster(clusterName: string, clusterPatch: any): Promise<any>{
+        var token = await this.authenticate();
+        // TODO Move these
+        var subscriptionId = this.configService.get<string>('aks.subscription');
+        var resourceGroup = this.configService.get<string>('aks.resourceGroup');
+
+        var url = "https://management.azure.com/subscriptions/"+subscriptionId+"/resourceGroups/"+resourceGroup+"/providers/Microsoft.ContainerService/managedClusters/"+clusterName+"?api-version=2020-09-01";
+        
+        try{
+            var response = await axios.put(url, clusterPatch, {headers: { Authorization: `Bearer ${token}` }});
         }catch(error){
             throw this.handleAzureError(error);
         }

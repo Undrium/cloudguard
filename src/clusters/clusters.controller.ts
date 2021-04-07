@@ -60,6 +60,28 @@ export class ClustersController {
     }
 
     @UseGuards(MustHaveJwtGuard)
+    @Patch('/aks/:formatName')
+    async patchAksCluster(@Param('formatName') formatName, @Body() patchData: any) {
+        try{
+            var cluster = await this.clustersService.patchAKSCluster(formatName, patchData);
+        }catch(error){
+            throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return this.responseService.createResponse(cluster, "Started patching cluster in Azure.");
+    }
+
+    @UseGuards(MustHaveJwtGuard)
+    @Get('/aks/:name/upgradeProfile')
+    async getAksClusterUpgradeProfile(@Param('name') name) {
+        try{
+            var cluster = await this.clustersService.getUpgradeProfile(name);
+        }catch(error){
+            throw new HttpException("Azure did not like the request", HttpStatus.NOT_FOUND);
+        }
+        return this.responseService.createResponse(cluster, "Fetched cluster upgrade profile from Azure.");
+    }
+
+    @UseGuards(MustHaveJwtGuard)
     @Get('/aks/:name')
     async getAksCluster(@Param('name') name) {
         try{
@@ -69,6 +91,7 @@ export class ClustersController {
         }
         return this.responseService.createResponse(cluster, "Fetched cluster from Azure.");
     }
+
 
     @UseGuards(MustHaveJwtGuard)
     @Delete('/aks/:name')

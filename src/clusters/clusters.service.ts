@@ -6,7 +6,7 @@ import { Logger } from '@nestjs/common';
 import { Repository, Not } from 'typeorm';
 
 import { KubernetesService } from '../kubernetes/kubernetes.service';
-import { AzureService } from '../vendors/azure.service';
+import { AzureDataSource } from '../vendors/azure.data-source';
 import { RbacService } from '../kubernetes/rbac.service';
 import { ProjectsService } from '../projects/projects.service';
 import { UsersService } from '../users/users.service';
@@ -23,7 +23,7 @@ import { ClusterPatchDto } from './cluster-patch.dto';
 export class ClustersService {
     private readonly logger = new Logger(ClustersService.name);
     constructor(
-        private azureService: AzureService,
+        private azureDataSource: AzureDataSource,
         private configService: ConfigService,
         @InjectRepository(Cluster)
         private clusterRepository: Repository<Cluster>,
@@ -42,7 +42,7 @@ export class ClustersService {
 
     async createAKSCluster(clusterData: any) {
       var cloudguardCluster = {};
-      var azureResponse = await this.azureService.createCluster(clusterData);
+      var azureResponse = await this.azureDataSource.createCluster(clusterData);
       // We need a reference somewhere, create it here
       if(clusterData.name){
         try{
@@ -56,20 +56,37 @@ export class ClustersService {
           });
         }catch(error){
           // Fallback!
-          await this.azureService.deleteCluster(azureResponse.name);
+          await this.azureDataSource.deleteCluster(azureResponse.name);
         }
       }
 
       return cloudguardCluster;
     }
 
+    async patchAKSCluster(formatName: string, patchData: any) {
+
+      var cluster = await this.getCluster(formatName);
+      // todo Verify response
+      var azureResponse = await this.azureDataSource.patchCluster(cluster.name, patchData);
+      cluster["specification"] = azureResponse; 
+      cluster["vendorState"] = azureResponse?.properties?.provisioningState || "Unknown";
+      await this.clusterRepository.save(cluster);
+
+      return cluster;
+    }
+
+    async getUpgradeProfile(name: string) {
+
+      return await this.azureDataSource.getUpgradeProfile(name);
+    }
+
     async getAKSCluster(name: string) {
-      var azureCluster = await this.azureService.getCluster(name);
+      var azureCluster = await this.azureDataSource.getCluster(name);
       // This is for updating the reference status so we won't spam Azure in vain
       if(azureCluster?.properties?.provisioningState != "Creating"){
         var cluster = await this.getCluster(name);
         // Really important to make sure the cluster has standards configurated for the enterprise
-        cluster = await this.azureService.postProvisionModifiyCluster(cluster, azureCluster);
+        cluster = await this.azureDataSource.postProvisionModifiyCluster(cluster, azureCluster);
         // Also do internal updates when cluster is done
         if(await this.kubernetesService.hasKubernetesAccess(cluster)){
           cluster = await this.postProvisionModifiyCluster(cluster);
@@ -80,7 +97,7 @@ export class ClustersService {
 
     async deleteAKSCluster(name: string) {
 
-      var deleted: Boolean = await this.azureService.deleteCluster(name);
+      var deleted: Boolean = await this.azureDataSource.deleteCluster(name);
       
       if(deleted){
         await this.deleteClusterByFormatname(name);
