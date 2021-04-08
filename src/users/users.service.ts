@@ -97,11 +97,12 @@ export class UsersService {
     async updatePreferences(username: string, preferences: any): Promise<any>{
         let user = await this.getByUsername(username, ["preferences"]);
 
-        user.preferences = preferences.map(obj=> ({ ...obj, id: user.id }));
+        user.preferences = preferences.map(obj => ({ ...obj, id: user.id }));
         try{
             await this.usersRepository.save(user);
         }catch(error){
             this.logger.error(error);
+            return false;
         }
         return true;
     }
