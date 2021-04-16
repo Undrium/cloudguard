@@ -71,6 +71,17 @@ export class ClustersController {
     }
 
     @UseGuards(MustHaveJwtGuard)
+    @Get('/aks/:name/kubeconfig')
+    async getAksKubeConfig(@Param('name') name) {
+        try{
+            var cluster = await this.clustersService.getAksKubeConfig(name);
+        }catch(error){
+            throw new HttpException("Azure did not like the request", HttpStatus.NOT_FOUND);
+        }
+        return this.responseService.createResponse(cluster, "Fetched KubeConfig from Azure.");
+    }
+
+    @UseGuards(MustHaveJwtGuard)
     @Get('/aks/:name/upgradeProfile')
     async getAksClusterUpgradeProfile(@Param('name') name) {
         try{

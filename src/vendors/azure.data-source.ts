@@ -137,7 +137,7 @@ export class AzureDataSource {
         return response.data || null;
     }
 
-    async getClusterAdminToken(resourceName: string){
+    async getClusterAdminCredentials(resourceName: string){
         var token = await this.authenticate();
         // TODO Move these
         var subscriptionId = this.configService.get<string>('aks.subscription');
@@ -149,13 +149,31 @@ export class AzureDataSource {
         }catch(error){
             throw this.handleAzureError(error);
         }
-        var token = null;
-        if(response.data && response.data.kubeconfigs && response.data.kubeconfigs[0] && response.data.kubeconfigs[0].value){
+        return response.data || null;
+    }
 
-            let buff = Buffer.from(response.data.kubeconfigs[0].value, "base64");
-            const data = yaml.load(buff.toString()); 
-            if(data && data.users){
-                for(var user of data.users){
+    async getClusterKubeConfig(resourceName: string){
+        var data = await this.getClusterAdminCredentials(resourceName);
+        var token = null;
+        if(data?.kubeconfigs){
+            for(var kubeConfigWrapper of data.kubeconfigs){
+                if(kubeConfigWrapper?.name?.includes("clusterAdmin")){
+                    token = kubeConfigWrapper.value || null; 
+                    break;
+                }
+            }
+        }
+        return token;
+    }
+
+    async getClusterAdminToken(resourceName: string){
+        var data = await this.getClusterAdminCredentials(resourceName);
+        var token = null;
+        if(data && data['kubeconfigs'] && data['kubeconfigs'][0] && data['kubeconfigs'][0].value){
+            let buff = Buffer.from(data['kubeconfigs'][0].value, "base64");
+            const yamlData = yaml.load(buff.toString()); 
+            if(yamlData?.users){
+                for(var user of yamlData.users){
                     if(user.name && user.name.includes("clusterAdmin")){
                         token = user['user'].token || null; 
                     }

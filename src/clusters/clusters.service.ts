@@ -76,8 +76,11 @@ export class ClustersService {
     }
 
     async getUpgradeProfile(name: string) {
-
       return await this.azureDataSource.getUpgradeProfile(name);
+    }
+
+    async getAksKubeConfig(name: string) {
+      return await this.azureDataSource.getClusterKubeConfig(name);
     }
 
     async getAKSCluster(name: string) {

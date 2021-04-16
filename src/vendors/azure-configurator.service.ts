@@ -12,6 +12,7 @@ const path = require('path');
 const fs = require('fs');
 const yaml = require('js-yaml');
 
+
 @Injectable()
 export class AzureConfiguratorService {
     private readonly logger = new Logger(AzureConfiguratorService.name);

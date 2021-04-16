@@ -24,6 +24,13 @@ export default () => ({
             {"name": "admin", "prefix": "cloudguard-admin-"}
         ]
     },
+    clusterPlugins: {
+        // When argo cd is setup this config is defaulted
+        argo:{
+            namespace: "argocd",
+            resourceUrl: "https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml"
+        }
+    },
     aks: {
         clientId: process.env.CLOUDGUARD_AKS_CLIENT_ID,
         subscription: process.env.CLOUDGUARD_AKS_SUBSCRIPTION,
