@@ -44,9 +44,7 @@ export class SandboxController implements OnModuleInit{
         this.projectRolesService.addOrUpdateUserToProject(project.formatName, user.username, role.id);
         this.projectRolesService.addOrUpdateUserToProject(project3.formatName, user.username, role2.id);
         this.projectRolesService.addOrUpdateUserToProject(project4.formatName, user.username, role3.id);
-        var cluster = await this.clustersService.getCluster("test-generated");
 
-        this.azureDataSource.getClusterKubeConfig(cluster.name);
         //await this.kubernetesService.upsertArgo(cluster, {});
  
         //var createdClusterName = await this.azureService.createCluster({name: "cloudguard"});

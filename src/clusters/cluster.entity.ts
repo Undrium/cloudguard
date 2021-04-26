@@ -17,6 +17,12 @@ export class Cluster {
     @Column({ type: "text", default: "" })
     token: string;
 
+    @Column({ type: "text", default: "" })
+    certData: string;
+
+    @Column({ type: "text", default: "" })
+    keyData: string;
+
     @Column({ nullable: true })
     dashboardUrl: string;
 

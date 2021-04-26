@@ -21,7 +21,7 @@ export class KubernetesService {
     }
 
     async hasKubernetesAccess(cluster: Cluster){
-        if(!cluster || !cluster.token || !cluster.apiServer){
+        if(!cluster || !cluster.apiServer){
             return false;
         }
         try{

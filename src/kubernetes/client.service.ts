@@ -43,10 +43,17 @@ export class ClientService {
             "insecure-skip-tls-verify": true,
             skipTLSVerify: true
         };
-        const user = {
-            name: 'default',
-            token: cluster.token,
+        
+        var user = {
+            name: 'default'
         };
+
+        if(cluster.token != ""){
+            user['token'] = cluster.token;
+        }else if(cluster.certData != "" && cluster.keyData != ""){
+            user['certData'] = cluster.certData;
+            user['keyData'] = cluster.keyData;
+        }
         
         const context = {
             name: cluster.name,

@@ -31,6 +31,7 @@ export class RbacService {
         try{
             var response = await client.listNamespacedSecret(projectConfig.serviceAccountsNamespace);
         }catch(err){
+            
             this.logger.handleKubernetesError(err);
             return "";
         }

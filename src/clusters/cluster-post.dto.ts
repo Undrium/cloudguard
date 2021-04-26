@@ -11,6 +11,12 @@ export class ClusterPostDto {
   @ApiProperty({ example: 'Access Token' })
   readonly token: string;
 
+  @ApiProperty({ example: 'sdazxczxsdasdfdgzxvzxcfzx' })
+  readonly certData: string;
+
+  @ApiProperty({ example: 'sdazxczxsdasdfdgzxvzxcfzx' })
+  readonly keyData: string;
+
   @ApiProperty({ example: 'Platform name (KUBERNETES/OPENSHIFT4)' })
   public platform: string;
 }
