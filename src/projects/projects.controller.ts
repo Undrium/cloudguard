@@ -75,15 +75,25 @@ export class ProjectsController{
         return this.responseService.createResponse(response, "Got project cluster.");
     }
 
-    @UseGuards(MustHaveJwtGuard)
+    @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)
+    @Delete(':projectFormatName/clusters/:clusterFormatName')
+    @ProjectRoles(['edit', 'view', 'admin'])
+    async DeleteCluster(@Param('projectFormatName') projectFormatName, @Param('clusterFormatName') clusterFormatName) {
+        var response = await this.clustersService.deleteClusterByFormatname(clusterFormatName);
+        return this.responseService.createResponse(response, "Deleted cluster.");
+    }
+
+    @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)
     @Post(':projectFormatName/clusters')
+    @ProjectRoles(['edit', 'view', 'admin'])
     async createProjectExistingCluster(@Param('projectFormatName') projectFormatName, @Body() clusterPostDto: ClusterPostDto) {
         var cluster = await this.clustersService.createExisting(clusterPostDto, projectFormatName);
         return this.responseService.createResponse(cluster, "Created existing cluster.");
     }
 
-    @UseGuards(MustHaveJwtGuard)
+    @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)
     @Post(':projectFormatName/clusters/aks')
+    @ProjectRoles(['edit', 'view', 'admin'])
     async createProjectAksCluster(@Param('projectFormatName') projectFormatName, @Body() clusterData: any) {
         try{
             var cluster = await this.clustersService.createAKSCluster(clusterData, projectFormatName);
@@ -93,8 +103,9 @@ export class ProjectsController{
         return this.responseService.createResponse(cluster, "Started creating cluster in Azure.");
     }
 
-    @UseGuards(MustHaveJwtGuard)
+    @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)
     @Patch(':projectFormatName/clusters/aks/:formatName')
+    @ProjectRoles(['edit', 'view', 'admin'])
     async patchProjectAksCluster(@Param('projectFormatName') projectFormatName, @Param('formatName') formatName, @Body() patchData: any) {
         try{
             var cluster = await this.clustersService.patchAKSCluster(formatName, patchData);
@@ -104,8 +115,9 @@ export class ProjectsController{
         return this.responseService.createResponse(cluster, "Started patching cluster in Azure.");
     }
 
-    @UseGuards(MustHaveJwtGuard)
+    @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)
     @Get(':projectFormatName/clusters/aks/:name/kubeconfig')
+    @ProjectRoles(['edit', 'view', 'admin'])
     async getProjectAksKubeConfig(@Param('projectFormatName') projectFormatName, @Param('name') name) {
         try{
             var cluster = await this.clustersService.getAksKubeConfig(name);
@@ -115,8 +127,9 @@ export class ProjectsController{
         return this.responseService.createResponse(cluster, "Fetched KubeConfig from Azure.");
     }
 
-    @UseGuards(MustHaveJwtGuard)
+    @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)
     @Get(':projectFormatName/clusters/aks/:name/upgradeProfile')
+    @ProjectRoles(['edit', 'view', 'admin'])
     async getProjectAksClusterUpgradeProfile(@Param('projectFormatName') projectFormatName, @Param('name') name) {
         try{
             var cluster = await this.clustersService.getUpgradeProfile(name);
@@ -126,8 +139,9 @@ export class ProjectsController{
         return this.responseService.createResponse(cluster, "Fetched cluster upgrade profile from Azure.");
     }
 
-    @UseGuards(MustHaveJwtGuard)
+    @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)
     @Get(':projectFormatName/clusters/aks/:name')
+    @ProjectRoles(['edit', 'view', 'admin'])
     async getAksCluster(@Param('projectFormatName') projectFormatName, @Param('name') name) {
         try{
             var cluster = await this.clustersService.getAKSCluster(name);
@@ -138,9 +152,9 @@ export class ProjectsController{
         return this.responseService.createResponse(cluster, "Fetched cluster from Azure.");
     }
 
-
-    @UseGuards(MustHaveJwtGuard)
+    @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)
     @Delete(':projectFormatName/clusters/aks/:name')
+    @ProjectRoles(['edit', 'view', 'admin'])
     async deleteAksCluster(@Param('projectFormatName') projectFormatName, @Param('name') name) {
         try{
             var response = await this.clustersService.deleteAKSCluster(name);
