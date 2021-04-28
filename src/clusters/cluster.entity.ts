@@ -1,4 +1,6 @@
-import {Column, Entity, PrimaryGeneratedColumn} from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn, ManyToOne } from "typeorm";
+
+import { Project } from "../projects/project.entity";
 
 @Entity()
 export class Cluster {
@@ -43,5 +45,9 @@ export class Cluster {
 
     @Column({ default: "" })
     vendorLocation: string;
+
+    @ManyToOne(type => Project, project => project.clusters, 
+        { onUpdate: 'CASCADE', onDelete: 'CASCADE', nullable: true })
+    project: Project;
 
 }

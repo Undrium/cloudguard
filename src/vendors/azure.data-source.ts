@@ -213,7 +213,6 @@ export class AzureDataSource {
     }
 
     async postProvisionModifiyCluster(cluster: any, azureCluster: any): Promise<any>{
-        console.log(azureCluster.properties);
         if(azureCluster && azureCluster.properties && azureCluster.properties.fqdn){
             var fqdn = azureCluster.properties.fqdn;
             var apiSerer = "https://" + fqdn.replace('.', '.portal.');

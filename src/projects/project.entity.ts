@@ -1,6 +1,7 @@
 import {Column, Entity, PrimaryGeneratedColumn, OneToMany, JoinTable } from "typeorm";
 
-import { ProjectRole } from "../project-roles/project-role.entity";
+import { ProjectRole }  from "../project-roles/project-role.entity";
+import { Cluster }      from "../clusters/cluster.entity";
 
 @Entity()
 export class Project {
@@ -22,4 +23,11 @@ export class Project {
         { cascade: true, onUpdate: 'CASCADE', onDelete: 'CASCADE' }
     )
     projectRoles: ProjectRole[];
+
+    @OneToMany(
+        type => Cluster, 
+        cluster => cluster.project, 
+        { cascade: true, onUpdate: 'CASCADE', onDelete: 'CASCADE' }
+    )
+    clusters: Cluster[];
 }

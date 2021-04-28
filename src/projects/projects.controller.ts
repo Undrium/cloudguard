@@ -10,8 +10,11 @@ import { User } from '../users/user.decorator';
 
 import { Repository } from 'typeorm';
 
+import { ClusterPostDto }   from '../clusters/cluster-post.dto';
+
 import { Project } from './project.entity';
 import { ProjectPostDto } from './project-post.dto';
+
 
 import { ResponseService }  from '../common/response.service';
 import { CloneService }     from '../kubernetes/clone.service';
@@ -67,9 +70,84 @@ export class ProjectsController{
     @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)
     @Get(':projectFormatName/clusters/:clusterFormatName')
     @ProjectRoles(['edit', 'view', 'admin'])
-    async findClusterToProject(@Param('projectFormatName') projectFormatName, @Param('clusterFormatName') clusterFormatName, @User() user): Promise<any> {
+    async getProjectCluster(@Param('projectFormatName') projectFormatName, @Param('clusterFormatName') clusterFormatName, @User() user): Promise<any> {
         var response = await this.clustersService.getProjectCluster(projectFormatName, clusterFormatName, user.username);
         return this.responseService.createResponse(response, "Got project cluster.");
+    }
+
+    @UseGuards(MustHaveJwtGuard)
+    @Post(':projectFormatName/clusters')
+    async createProjectExistingCluster(@Param('projectFormatName') projectFormatName, @Body() clusterPostDto: ClusterPostDto) {
+        var cluster = await this.clustersService.createExisting(clusterPostDto, projectFormatName);
+        return this.responseService.createResponse(cluster, "Created existing cluster.");
+    }
+
+    @UseGuards(MustHaveJwtGuard)
+    @Post(':projectFormatName/clusters/aks')
+    async createProjectAksCluster(@Param('projectFormatName') projectFormatName, @Body() clusterData: any) {
+        try{
+            var cluster = await this.clustersService.createAKSCluster(clusterData, projectFormatName);
+        }catch(error){
+            throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return this.responseService.createResponse(cluster, "Started creating cluster in Azure.");
+    }
+
+    @UseGuards(MustHaveJwtGuard)
+    @Patch(':projectFormatName/clusters/aks/:formatName')
+    async patchProjectAksCluster(@Param('projectFormatName') projectFormatName, @Param('formatName') formatName, @Body() patchData: any) {
+        try{
+            var cluster = await this.clustersService.patchAKSCluster(formatName, patchData);
+        }catch(error){
+            throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return this.responseService.createResponse(cluster, "Started patching cluster in Azure.");
+    }
+
+    @UseGuards(MustHaveJwtGuard)
+    @Get(':projectFormatName/clusters/aks/:name/kubeconfig')
+    async getProjectAksKubeConfig(@Param('projectFormatName') projectFormatName, @Param('name') name) {
+        try{
+            var cluster = await this.clustersService.getAksKubeConfig(name);
+        }catch(error){
+            throw new HttpException("Azure did not like the request", HttpStatus.NOT_FOUND);
+        }
+        return this.responseService.createResponse(cluster, "Fetched KubeConfig from Azure.");
+    }
+
+    @UseGuards(MustHaveJwtGuard)
+    @Get(':projectFormatName/clusters/aks/:name/upgradeProfile')
+    async getProjectAksClusterUpgradeProfile(@Param('projectFormatName') projectFormatName, @Param('name') name) {
+        try{
+            var cluster = await this.clustersService.getUpgradeProfile(name);
+        }catch(error){
+            throw new HttpException("Azure did not like the request", HttpStatus.NOT_FOUND);
+        }
+        return this.responseService.createResponse(cluster, "Fetched cluster upgrade profile from Azure.");
+    }
+
+    @UseGuards(MustHaveJwtGuard)
+    @Get(':projectFormatName/clusters/aks/:name')
+    async getAksCluster(@Param('projectFormatName') projectFormatName, @Param('name') name) {
+        try{
+            var cluster = await this.clustersService.getAKSCluster(name);
+        }catch(error){
+            console.log(error);
+            throw new HttpException("Azure did not like the request", HttpStatus.NOT_FOUND);
+        }
+        return this.responseService.createResponse(cluster, "Fetched cluster from Azure.");
+    }
+
+
+    @UseGuards(MustHaveJwtGuard)
+    @Delete(':projectFormatName/clusters/aks/:name')
+    async deleteAksCluster(@Param('projectFormatName') projectFormatName, @Param('name') name) {
+        try{
+            var response = await this.clustersService.deleteAKSCluster(name);
+        }catch(error){
+            throw new HttpException("Azure did not like the request", HttpStatus.NOT_FOUND);
+        }
+        return this.responseService.createResponse(response, "Deleted cluster in Azure.");
     }
 
     @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)

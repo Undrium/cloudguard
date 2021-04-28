@@ -40,20 +40,25 @@ export class ClustersService {
     }
 
 
-    async createAKSCluster(clusterData: any) {
+    async createAKSCluster(clusterData: any, projectFormatName?: string) {
       var cloudguardCluster = {};
       var azureResponse = await this.azureDataSource.createCluster(clusterData);
       // We need a reference somewhere, create it here
       if(clusterData.name){
         try{
-          cloudguardCluster = await this.create({
+          var data = {
             name: azureResponse.name,
             platform: "KUBERNETES",
             vendor: "AZURE",
             vendorState: "Creating",
             vendorLocation: azureResponse.location,
             specification: clusterData.specification
-          });
+          }
+          // Attach it to a project if wanted
+          if(projectFormatName){
+            data['project'] = await this.projectsService.getByFormatName(projectFormatName);
+          }
+          cloudguardCluster = await this.create(data);
         }catch(error){
           // Fallback!
           await this.azureDataSource.deleteCluster(azureResponse.name);
@@ -131,8 +136,11 @@ export class ClustersService {
     /*
     * This creates a reference to an already existing cluster in CloudGuard
     */
-    async createExisting(clusterData: ClusterPostDto){
+    async createExisting(clusterData: ClusterPostDto, projectFormatName?){
         clusterData['formatName'] = await this.generateFormatName(clusterData);
+        if(projectFormatName){
+          clusterData['project'] = await this.projectsService.getByFormatName(projectFormatName);
+        }
         var cluster = await this.clusterRepository.save(clusterData);
 
         if(await this.kubernetesService.hasKubernetesAccess(cluster)){
@@ -152,14 +160,13 @@ export class ClustersService {
     }
 
     async getProjectClusters(formatName: string): Promise<ClusterGetDto[]>{
-      var project = await this.projectsService.getByFormatName(formatName);
-      var ClusterGetDtos = [];
-      // @todo connect clusters with user 
-      var clusters = await this.clusterRepository.find();
-      for(var cluster of clusters){
-        ClusterGetDtos.push(new ClusterGetDto(cluster))
+      var project = await this.projectsService.getByFormatName(formatName, ["clusters"]);
+      var clusterGetDtos = [];
+
+      for(var cluster of project.clusters){
+        clusterGetDtos.push(new ClusterGetDto(cluster))
       }
-      return ClusterGetDtos;
+      return clusterGetDtos;
     }
 
     /*

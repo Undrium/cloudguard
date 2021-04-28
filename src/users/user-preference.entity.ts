@@ -4,12 +4,12 @@ import { User } from "../users/user.entity";
 
 @Entity()
 export class UserPreference {   
-    @ManyToOne(type => User, user => user.preferences, { primary: true, onUpdate: 'CASCADE', onDelete: 'CASCADE' })
-    user: User;
-
-    @PrimaryColumn()
+   @PrimaryColumn()
     readonly preferenceName: string;
 
     @Column()
     readonly preferenceValue: string;
+
+    @ManyToOne(type => User, user => user.preferences, { primary: true, onUpdate: 'CASCADE', onDelete: 'CASCADE' })
+    user: User;
 }

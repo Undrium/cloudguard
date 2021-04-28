@@ -20,8 +20,8 @@ export class ProjectsService {
       
     }
 
-    async getByFormatName(formatName: string): Promise<Project>{
-      return this.projectRepository.findOne({formatName: formatName});
+    async getByFormatName(formatName: string, relations?): Promise<Project>{
+      return this.projectRepository.findOne({formatName: formatName}, {relations: relations});
     }
 
     async create(project: any){
