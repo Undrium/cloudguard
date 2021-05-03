@@ -7,7 +7,6 @@ import { MustHaveJwtGuard }         from '../auth/must-have-jwt.guard';
 import { ProjectRolesGuard }    from '../auth/project-roles.guard';
 
 import { ClustersService }  from './clusters.service';
-import { CloneService }     from '../kubernetes/clone.service';
 import { LoggerService }    from '../common/logger.service';
 import { ResponseService }  from '../common/response.service';
 
@@ -26,7 +25,6 @@ export class ClustersController {
         private configService: ConfigService,
         @InjectRepository(Cluster)
         private clusterRepository: Repository<Cluster>,
-        private cloneService: CloneService,
         private clustersService: ClustersService,
         private responseService: ResponseService
     ) {}
@@ -35,9 +33,9 @@ export class ClustersController {
     @Get()
     async findAll(): Promise<any> {
         // todo return an admin version of clusters here
-        this.logger.verbose("Finding all projects");
-        var clusters = await this.clusterRepository.find();
-        return this.responseService.createResponse(clusters, "Getting all clusters.");
+        this.logger.verbose("Finding all clusters");
+        var clusters = await this.clusterRepository.find({relations: ["project"]});
+        return this.responseService.createResponse(clusters, "Retrieved all clusters.");
     }
     
     @UseGuards(MustHaveJwtGuard)

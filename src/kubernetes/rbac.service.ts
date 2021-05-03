@@ -18,6 +18,7 @@ export class RbacService {
     constructor(private configService: ConfigService, private clientService: ClientService) {}
 
     async getClusterToken(project: Project, cluster: Cluster, user: User){
+
         const projectConfig = this.configService.get<any>('project');
         // Always setup before getting the token
         // TODO Actually bind the correct role to a user
@@ -66,7 +67,7 @@ export class RbacService {
     }
 
     async setupAccessInProjectAndCluster(project: Project, cluster: Cluster, user: User, roleType = 'edit'){
-
+        
         // First delete all accesses 
         await this.deleteAllRolebindingsForUser(cluster, user);
         var serviceAccount = await this.upsertServiceAccount(cluster, user);

@@ -50,4 +50,15 @@ export class Cluster {
         { onUpdate: 'CASCADE', onDelete: 'CASCADE', nullable: true })
     project: Project;
 
+    public readyForKubernetes(){
+        if(!this.apiServer){
+            return false;
+        }
+
+        if(!(this.keyData && this.certData) && !this.token){
+            return false;
+        }
+        return true;
+    }
+
 }

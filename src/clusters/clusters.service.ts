@@ -193,6 +193,11 @@ export class ClustersService {
       var project = await this.projectsService.getByFormatName(projectFormatName);
       var cluster = await this.clusterRepository.findOne({formatName: clusterFormatName});
 
+      if(!cluster.readyForKubernetes()){
+        this.logger.debug(`Cluster ${cluster.name} is not properly setup yet for Kubernetes communication.`);
+        return [];
+      }
+
       return await this.rbacService.getProjectsClustersNamespaces(project, cluster);
 
     }
