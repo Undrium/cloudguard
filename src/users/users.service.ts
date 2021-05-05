@@ -96,6 +96,10 @@ export class UsersService {
 
     async updatePreferences(username: string, preferences: any): Promise<any>{
         let user = await this.getByUsername(username, ["preferences"]);
+        if(!user || !user.id){
+            this.logger.debug(`Could not find user ${username} to save preferences`);
+            return false;
+        }
 
         user.preferences = preferences.map(obj => ({ ...obj, id: user.id }));
         try{
