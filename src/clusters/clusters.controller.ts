@@ -7,7 +7,7 @@ import { MustHaveJwtGuard }         from '../auth/must-have-jwt.guard';
 import { ProjectRolesGuard }    from '../auth/project-roles.guard';
 
 import { ClustersService }  from './clusters.service';
-import { LoggerService }    from '../common/logger.service';
+import { LoggerService }    from '../logs/logs.service';
 import { ResponseService }  from '../common/response.service';
 
 import { Cluster }          from './cluster.entity';
@@ -19,15 +19,16 @@ import { ClusterPatchDto }  from './cluster-patch.dto';
 @Controller('clusters')
 export class ClustersController {
     
-    private readonly logger = new LoggerService(ClustersController.name);
-
     constructor(
         private configService: ConfigService,
         @InjectRepository(Cluster)
         private clusterRepository: Repository<Cluster>,
         private clustersService: ClustersService,
+        private logger: LoggerService,
         private responseService: ResponseService
-    ) {}
+    ) {
+        this.logger.setContext(ClustersController.name);
+    }
 
     @UseGuards(MustHaveJwtGuard)
     @Get()

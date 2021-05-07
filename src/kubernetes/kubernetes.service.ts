@@ -4,13 +4,18 @@ import { ConfigService }    from '@nestjs/config';
 import { Cluster }          from '../clusters/cluster.entity';
 
 import { ClientService }    from './client.service';
-import { LoggerService }    from '../common/logger.service';
+import { LoggerService }    from '../logs/logs.service';
 
 @Injectable()
 export class KubernetesService {
-    private readonly logger = new LoggerService(KubernetesService.name);
 
-    constructor(private configService: ConfigService, private clientService: ClientService) {}
+    constructor(
+        private configService: ConfigService, 
+        private clientService: ClientService,
+        private logger: LoggerService
+    ) {
+        this.logger.setContext(KubernetesService.name);
+    }
 
     getDashboardUrl(cluster: Cluster){
         return cluster.apiServer + "/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/"

@@ -1,13 +1,13 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Logger } from '@nestjs/common';
 
 import { Repository, Not } from 'typeorm';
 
 import { KubernetesService } from '../kubernetes/kubernetes.service';
 import { AzureDataSource } from '../vendors/azure.data-source';
 import { RbacService } from '../kubernetes/rbac.service';
+import { LoggerService } from '../logs/logs.service';
 import { ProjectsService } from '../projects/projects.service';
 import { UsersService } from '../users/users.service';
 
@@ -21,7 +21,7 @@ import { ClusterPatchDto } from './cluster-patch.dto';
 
 @Injectable()
 export class ClustersService {
-    private readonly logger = new Logger(ClustersService.name);
+
     constructor(
         private azureDataSource: AzureDataSource,
         private configService: ConfigService,
@@ -29,11 +29,14 @@ export class ClustersService {
         private clusterRepository: Repository<Cluster>,
         private projectsService: ProjectsService,
         private kubernetesService: KubernetesService,
+        private logger: LoggerService,
         private rbacService: RbacService,
         private usersService: UsersService,
         @InjectRepository(User)
         private usersRepository: Repository<User>
-    ) {}
+    ) {
+      this.logger.setContext(ClustersService.name);
+    }
 
     async deleteClusterByFormatname(formatName: string){
         return await this.clusterRepository.delete({formatName: formatName});
@@ -50,7 +53,7 @@ export class ClustersService {
             name: azureResponse.name,
             platform: "KUBERNETES",
             vendor: "AZURE",
-            vendorState: "Creating",
+            vendorState: "creating",
             vendorLocation: azureResponse.location,
             specification: clusterData.specification
           }
@@ -74,7 +77,7 @@ export class ClustersService {
       // todo Verify response
       var azureResponse = await this.azureDataSource.patchCluster(cluster.name, patchData);
       cluster["specification"] = azureResponse; 
-      cluster["vendorState"] = azureResponse?.properties?.provisioningState || "Unknown";
+      cluster["vendorState"] = this.normalizeClusterState(cluster, azureResponse?.properties?.provisioningState);
       await this.clusterRepository.save(cluster);
 
       return cluster;
@@ -90,16 +93,25 @@ export class ClustersService {
 
     async getAKSCluster(name: string) {
       var azureCluster = await this.azureDataSource.getCluster(name);
+
+      var aksProgressStates = this.configService.get<String[]>('aks.progressStates');
+      
+      var currentState = azureCluster?.properties?.provisioningState;
       // This is for updating the reference status so we won't spam Azure in vain
-      if(azureCluster?.properties?.provisioningState != "Creating"){
+      if(currentState && !aksProgressStates.includes(currentState)){
         var cluster = await this.getCluster(name);
         // Really important to make sure the cluster has standards configurated for the enterprise
-        cluster = await this.azureDataSource.postProvisionModifiyCluster(cluster, azureCluster);
+        cluster = await this.azureDataSource.postProvisionModifyCluster(cluster, azureCluster);
+        // Normalize vendorState
+        cluster['vendorState'] = this.normalizeClusterState(cluster, cluster.vendorState);
         // Also do internal updates when cluster is done
         if(await this.kubernetesService.hasKubernetesAccess(cluster)){
-          cluster = await this.postProvisionModifiyCluster(cluster);
+          cluster = await this.postProvisionModifyCluster(cluster);
         }
+      }else if(!currentState){
+        this.logger.debug(`Cluster ${cluster.name} is missing a state.`);
       }
+
       return azureCluster;
     }
 
@@ -117,7 +129,7 @@ export class ClustersService {
     /*
     * This is done to all added clusters when they are known to have been provisioned (out of creation stage)
     */
-    async postProvisionModifiyCluster(cluster: Cluster){
+    async postProvisionModifyCluster(cluster: Cluster){
       var versionInfo = await this.kubernetesService.getKubernetesVersionInfo(cluster);
       cluster.platformVersionInfo = versionInfo;
       return await this.update(cluster);
@@ -133,6 +145,28 @@ export class ClustersService {
       return this.clusterRepository.save(clusterData);
     }
 
+    // Normalize the state of a cluster from different vendors
+    public normalizeClusterState(cluster: any, stateToNormalize: string): string{
+      var patchingVersions = ["upgrading", "patching"];
+      if(patchingVersions.includes(stateToNormalize.toLowerCase())){
+        return "patching";
+      }
+      var creatingVersions = ["provisioning", "creating"];
+      if(creatingVersions.includes(stateToNormalize.toLowerCase())){
+        return "creating";
+      }
+      var deletingVersions = ["deleting", "terminating"];
+      if(deletingVersions.includes(stateToNormalize.toLowerCase())){
+        return "deleting";
+      }
+      var createdVersions = ["succeeded", "created"];
+      if(createdVersions.includes(stateToNormalize.toLowerCase())){
+        return "created";
+      }
+      this.logger.debug(`Cluster ${cluster.name} has a weird state (${stateToNormalize}) at its vendor.`);
+      return "unknown";
+    }
+
     /*
     * This creates a reference to an already existing cluster in CloudGuard
     */
@@ -144,7 +178,7 @@ export class ClustersService {
         var cluster = await this.clusterRepository.save(clusterData);
 
         if(await this.kubernetesService.hasKubernetesAccess(cluster)){
-          cluster = await this.postProvisionModifiyCluster(cluster);
+          cluster = await this.postProvisionModifyCluster(cluster);
         }
         return cluster;
     }
@@ -178,14 +212,26 @@ export class ClustersService {
       var cluster = await this.clusterRepository.findOne({formatName: formatName});
       var clusterGetDto = new ClusterGetDto(cluster);
       
-      var user = await this.usersRepository.findOne({username: username});
+      // Cluster can be in a state where we need to ask the vendor if something has changed
+      if(this.hasVendorProgress(cluster)){
+        await this.getAKSCluster(cluster.name);
+      }
       
       if(await this.kubernetesService.hasKubernetesAccess(cluster)){
+        var user = await this.usersRepository.findOne({username: username});
         clusterGetDto.personalToken = await this.rbacService.getClusterToken(project, cluster, user);
         clusterGetDto.dashboardUrl = await this.kubernetesService.getDashboardUrl(cluster);
       }
       
       return clusterGetDto;
+    }
+
+    public hasVendorProgress(cluster: any): boolean{
+      if(!cluster.vendorState){
+        return false;
+      }
+      var progressStates = this.configService.get<String[]>('cluster.progressStates');
+      return progressStates.includes(cluster.vendorState);
     }
 
     async getProjectsClustersNamespaces(projectFormatName: string, clusterFormatName: string): Promise<any>{

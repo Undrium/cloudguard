@@ -2,9 +2,18 @@ import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
+
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {logger: ['warn', 'debug', 'error']});
+  // Default the logger to warn and error, configuration is loading logging verbosity some rows below
+  const app = await NestFactory.create(AppModule, {logger: ['error', 'warn']});
   
+  const config = app.get("ConfigService").internalConfig;
+  app.useLogger(config.logging.logLevels);
+  var logger = await app.resolve("LoggerService");
+  logger.setContext("Main");
+  logger.demo();
+
+
   app.enableCors();
   app.setGlobalPrefix('api/v1');
   // Swagger

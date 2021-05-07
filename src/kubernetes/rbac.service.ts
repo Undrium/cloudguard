@@ -7,15 +7,20 @@ import { Cluster } from '../clusters/cluster.entity';
 import { Project } from 'src/projects/project.entity';
 import { User } from 'src/users/user.entity';
 
-import { LoggerService } from '../common/logger.service';
+import { LoggerService } from '../logs/logs.service';
 
 import { ClientService } from './client.service';
 
 @Injectable()
 export class RbacService {
-    private readonly logger = new LoggerService(RbacService.name);
 
-    constructor(private configService: ConfigService, private clientService: ClientService) {}
+    constructor(
+        private configService: ConfigService, 
+        private clientService: ClientService,
+        private logger: LoggerService,
+    ) {
+        this.logger.setContext(RbacService.name);
+    }
 
     async getClusterToken(project: Project, cluster: Cluster, user: User){
 

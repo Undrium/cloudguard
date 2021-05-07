@@ -3,14 +3,19 @@ import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 
 import { UsersService }         from '../users/users.service';
-import { LoggerService }        from '../common/logger.service';
+import { LoggerService }        from '../logs/logs.service';
 
 
 @Injectable()
 export class ProjectRolesGuard implements CanActivate {
-    private readonly logger = new LoggerService(ProjectRolesGuard.name);
 
-    constructor(private usersService: UsersService, private reflector: Reflector){}
+    constructor(
+        private logger: LoggerService,
+        private usersService: UsersService, 
+        private reflector: Reflector
+    ) {
+        this.logger.setContext(ProjectRolesGuard.name);
+    }
 
     async canActivate(context: ExecutionContext,): Promise<boolean> {
         this.logger.verbose("Guard check " + context.getClass().name + " " + context.getHandler().name);

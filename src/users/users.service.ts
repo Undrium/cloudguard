@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { LoggerService }    from '../common/logger.service';
+import { LoggerService }    from '../logs/logs.service';
 
 import { Role }             from '../roles/role.entity';
 import { User }             from './user.entity';
@@ -16,10 +16,9 @@ import { UserPreference }   from './user-preference.entity';
 @Injectable()
 export class UsersService {
 
-    private readonly logger = new LoggerService(UsersService.name);
-
     constructor(
         private configService: ConfigService,
+        private logger: LoggerService,
         @InjectRepository(User)
         private usersRepository: Repository<User>,
         @InjectRepository(Project)
@@ -28,7 +27,9 @@ export class UsersService {
         private userPreferenceRepository: Repository<UserPreference>,
         @InjectRepository(Role)
         private roleRepository: Repository<Role>
-    ) {}
+    ) {
+        this.logger.setContext(UsersService.name);
+    }
 
 
     // Users which are always there

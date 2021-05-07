@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 // Global modules
 import { CommonModule }       from './common/common.module';
+import { LoggerModule }       from './logs/logs.module';
 // Normal modules
 import { AuthModule }         from './auth/auth.module';
 import { ClustersModule }     from './clusters/clusters.module';
@@ -13,6 +14,7 @@ import { UsersModule }        from './users/users.module';
 import { SandboxModule }      from './sandbox/sandbox.module';
 
 import { Cluster }        from './clusters/cluster.entity';
+import { LogEntry }       from './logs/log-entry.entity';
 import { Registry }       from './registries/registry.entity';
 import { User }           from './users/user.entity';
 import { UserPreference } from './users/user-preference.entity';
@@ -32,6 +34,7 @@ import { ProjectRolesModule } from './project-roles/project-roles.module';
   imports: [
     AuthModule, 
     CommonModule,
+    LoggerModule,
     ClustersModule, 
     KubernetesModule,
     RegistriesModule,
@@ -49,7 +52,16 @@ import { ProjectRolesModule } from './project-roles/project-roles.module';
       username: process.env.CLOUDGUARD_POSTGRES_USERNAME || "postgres",
       password: process.env.CLOUDGUARD_POSTGRES_PASSWORD || "pass",
       database: process.env.CLOUDGUARD_POSTGRES_DATABASE || "cloudguard",
-      entities: [User, UserPreference, Cluster, Registry, Role, Project, ProjectRole],
+      entities: [
+        Cluster, 
+        LogEntry,
+        Project, 
+        ProjectRole,
+        Registry, 
+        Role, 
+        User, 
+        UserPreference 
+      ],
       synchronize: true
     }),
     ProjectsModule,
@@ -57,6 +69,9 @@ import { ProjectRolesModule } from './project-roles/project-roles.module';
   ],
   controllers: [ AppController ],
   providers: [ AppService ],
-  exports: [ CommonModule ]
+  exports: [ 
+    CommonModule, 
+    LoggerModule 
+  ]
 })
 export class AppModule {}

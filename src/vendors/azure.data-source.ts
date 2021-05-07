@@ -112,6 +112,7 @@ export class AzureDataSource {
         try{
             var response = await axios.put(url, data, options);
         }catch(error){
+            console.log("HERP", error);
             throw this.handleAzureError(error);
         }
         
@@ -212,7 +213,7 @@ export class AzureDataSource {
         return response.data.access_token || null;
     }
 
-    async postProvisionModifiyCluster(cluster: any, azureCluster: any): Promise<any>{
+    async postProvisionModifyCluster(cluster: any, azureCluster: any): Promise<any>{
         if(azureCluster && azureCluster.properties && azureCluster.properties.fqdn){
             var fqdn = azureCluster.properties.fqdn;
             var apiSerer = "https://" + fqdn.replace('.', '.portal.');
@@ -232,6 +233,5 @@ export class AzureDataSource {
         }
         return error;
     }
-
 
 }

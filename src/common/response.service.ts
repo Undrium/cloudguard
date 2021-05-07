@@ -1,10 +1,14 @@
-import { LoggerService }    from './logger.service';
+import { Injectable } from '@nestjs/common';
 
+import { LoggerService }    from '../logs/logs.service';
+
+@Injectable()
 export class ResponseService {
-  private readonly logger = new LoggerService(ResponseService.name);
 
-  constructor(){
-
+  constructor(
+    private logger: LoggerService
+  ){
+    this.logger.setContext(ResponseService.name);
   }
 
   public createResponse(result, message){

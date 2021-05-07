@@ -1,5 +1,5 @@
 import { Controller, Post, Get, Delete, Patch, Body, Param, UseGuards, OnModuleInit } from '@nestjs/common';
-import { Logger } from '@nestjs/common';
+import { LoggerService }    from '../logs/logs.service';
 import { MustHaveJwtGuard } from '../auth/must-have-jwt.guard';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -19,10 +19,10 @@ import { ProjectRolesService }  from '../project-roles/project-roles.service';
 
 @Controller('sandbox')
 export class SandboxController implements OnModuleInit{
-    private readonly logger = new Logger(SandboxController.name);
 
     constructor(
         private clustersService: ClustersService,
+        private logger: LoggerService,
         private kubernetesService: KubernetesService,
         private projectsService: ProjectsService,
         private projectRolesService: ProjectRolesService,
@@ -30,7 +30,9 @@ export class SandboxController implements OnModuleInit{
         private usersService: UsersService,
         private azureDataSource: AzureDataSource,
         private responseService: ResponseService,
-    ) {}
+    ) {
+        this.logger.setContext(SandboxController.name);
+    }
 
     async onModuleInit() {
         var project = await this.projectsService.upsert({"name": "kron", "kubernetesIdentifier": "kron"});
@@ -45,13 +47,20 @@ export class SandboxController implements OnModuleInit{
         this.projectRolesService.addOrUpdateUserToProject(project3.formatName, user.username, role2.id);
         this.projectRolesService.addOrUpdateUserToProject(project4.formatName, user.username, role3.id);
 
+        
         //await this.kubernetesService.upsertArgo(cluster, {});
  
         //var createdClusterName = await this.azureService.createCluster({name: "cloudguard"});
 
         //await this.azureService.deleteCluster("cloudguard-generated");
         //this.statusLoop("cloudguard-generated");
-        //var data = await this.clustersService.getAKSCluster("abra-generated");
+
+        try{
+            //var data = await this.clustersService.getAKSCluster("test-generated");
+
+        }catch(error){
+            console.log(error);
+        }
 
         //var data = await this.azureService.getClusterAdminToken("hope-generated");
         

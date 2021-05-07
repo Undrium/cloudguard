@@ -1,24 +1,24 @@
 import { Injectable } from '@nestjs/common';
-const k8s = require('@kubernetes/client-node');
 import { ConfigService } from '@nestjs/config';
 import { Cluster } from '../clusters/cluster.entity';
 
-
 import { ClientService }        from './client.service';
 import { KubernetesService }    from './kubernetes.service';
-import { LoggerService }        from '../common/logger.service';
-import { resourceLimits } from 'node:worker_threads';
+import { LoggerService }        from '../logs/logs.service';
 
+const k8s = require('@kubernetes/client-node');
 
 @Injectable()
 export class CloneService {
-    private readonly logger = new LoggerService(CloneService.name);
     
     constructor(
         private configService: ConfigService, 
         private clientService: ClientService,
-        private kubernetesService: KubernetesService
-    ) {}
+        private kubernetesService: KubernetesService,
+        private logger: LoggerService
+    ) {
+        this.logger.setContext(CloneService.name);
+    }
 
     async clone(options: any){
 

@@ -1,3 +1,7 @@
+# CloudGuard
+
+The CloudGuard is the background assistant to LiftCrane. It is there to index the clusters, keep logs of actions towards them and assist in security scoped to the projects.
+
 ## Environment Variables
 ### Database 
 The CloudGuard currently uses PostgreSQL, setup the following variables to make it work. Also make sure the PostgreSQL has the database up and running. It will be populated once the Cloudguard starts up.

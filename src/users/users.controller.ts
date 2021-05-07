@@ -3,7 +3,7 @@ import { MustHaveJwtGuard }     from '../auth/must-have-jwt.guard';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository }       from 'typeorm';
 
-import { LoggerService }            from '../common/logger.service';
+import { LoggerService }            from '../logs/logs.service';
 import { ResponseService }          from '../common/response.service';
 
 import { User }                 from './user.entity';
@@ -13,13 +13,16 @@ import { UsersService }         from './users.service';
 
 @Controller('users')
 export class UsersController {
-    private readonly logger = new LoggerService(UsersController.name);
+
     constructor(
         @InjectRepository(User)
         private usersRepository: Repository<User>,
         private usersService: UsersService,
+        private logger: LoggerService,
         private responseService: ResponseService
-    ) {}
+    ) {
+        this.logger.setContext(UsersController.name);
+    }
 
     @UseGuards(MustHaveJwtGuard)
     @Get()
