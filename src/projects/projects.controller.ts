@@ -1,5 +1,4 @@
 import { Controller, Post, Get, Delete, Patch, Body, Param, UseGuards, OnModuleInit, HttpException, HttpStatus } from '@nestjs/common';
-import { Logger } from '@nestjs/common';
 
 import { MustHaveJwtGuard } from '../auth/must-have-jwt.guard';
 import { ProjectRolesGuard } from '../auth/project-roles.guard';
@@ -16,15 +15,16 @@ import { Project } from './project.entity';
 import { ProjectPostDto } from './project-post.dto';
 
 
-import { ResponseService }  from '../common/response.service';
-import { CloneService }     from '../kubernetes/clone.service';
-import { ProjectsService } from './projects.service';
-import { ClustersService } from '../clusters/clusters.service';
+import { LoggerService }        from '../logs/logs.service';
+import { ResponseService }      from '../common/response.service';
+import { CloneService }         from '../kubernetes/clone.service';
+import { ProjectsService }      from './projects.service';
+import { ClustersService }      from '../clusters/clusters.service';
 
 
 @Controller('projects')
 export class ProjectsController{
-    private readonly logger = new Logger(ProjectsController.name);
+
 
     constructor(
         @InjectRepository(Project)
@@ -32,8 +32,11 @@ export class ProjectsController{
         private projectsService: ProjectsService,
         private cloneService: CloneService,
         private clustersService: ClustersService,
+        private logger: LoggerService,
         private responseService: ResponseService
-    ) {}
+    ) {
+        this.logger.setContext(ProjectsController.name);
+    }
   
 
     @UseGuards(MustHaveJwtGuard)
@@ -86,32 +89,55 @@ export class ProjectsController{
     @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)
     @Post(':projectFormatName/clusters')
     @ProjectRoles(['edit', 'view', 'admin'])
-    async createProjectExistingCluster(@Param('projectFormatName') projectFormatName, @Body() clusterPostDto: ClusterPostDto) {
+    async createProjectExistingCluster(@Param('projectFormatName') projectFormatName, @Body() clusterPostDto: ClusterPostDto, @User() user) {
         var cluster = await this.clustersService.createExisting(clusterPostDto, projectFormatName);
+        this.logger.addLogEntry(`${user.username} added an existing cluster (${cluster.formatName}) to the cloudguard.`, {
+            clusterId: cluster.id,
+            username: user.username,
+            projectFormatName: projectFormatName
+        }, "common");
         return this.responseService.createResponse(cluster, "Created existing cluster.");
     }
 
     @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)
     @Post(':projectFormatName/clusters/aks')
     @ProjectRoles(['edit', 'view', 'admin'])
-    async createProjectAksCluster(@Param('projectFormatName') projectFormatName, @Body() clusterData: any) {
+    async createProjectAksCluster(@Param('projectFormatName') projectFormatName, @Body() clusterData: any, @User() user) {
         try{
             var cluster = await this.clustersService.createAKSCluster(clusterData, projectFormatName);
+            this.logger.addLogEntry(`${user.username} started creating an AKS cluster (${cluster['formatName']}).`, {
+                clusterId: cluster['id'],
+                username: user.username,
+                projectFormatName: projectFormatName
+            }, "cluster_creation_started");
         }catch(error){
             throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
         }
+        
         return this.responseService.createResponse(cluster, "Started creating cluster in Azure.");
     }
 
     @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)
     @Patch(':projectFormatName/clusters/aks/:formatName')
     @ProjectRoles(['edit', 'view', 'admin'])
-    async patchProjectAksCluster(@Param('projectFormatName') projectFormatName, @Param('formatName') formatName, @Body() patchData: any) {
+    async patchProjectAksCluster(
+        @Param('projectFormatName') projectFormatName, 
+        @Param('formatName') formatName, 
+        @Body() patchData: any, 
+        @User() user
+    ) {
         try{
             var cluster = await this.clustersService.patchAKSCluster(formatName, patchData);
         }catch(error){
             throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
         }
+        this.logger.addLogEntry(`${user.username} started patching an AKS cluster (${cluster['formatName']}).`, {
+            clusterId: cluster['id'],
+            username: user.username,
+            projectFormatName: projectFormatName,
+            patchData: patchData
+        }, "cluster_patching_started");
+
         return this.responseService.createResponse(cluster, "Started patching cluster in Azure.");
     }
 
@@ -144,12 +170,13 @@ export class ProjectsController{
     @ProjectRoles(['edit', 'view', 'admin'])
     async getAksCluster(@Param('projectFormatName') projectFormatName, @Param('name') name) {
         try{
-            var cluster = await this.clustersService.getAKSCluster(name);
+            var cluster = await this.clustersService.getCluster(name);
+            var aksCluster = await this.clustersService.getAKSCluster(cluster);
         }catch(error){
             console.log(error);
             throw new HttpException("Azure did not like the request", HttpStatus.NOT_FOUND);
         }
-        return this.responseService.createResponse(cluster, "Fetched cluster from Azure.");
+        return this.responseService.createResponse(aksCluster, "Fetched cluster from Azure.");
     }
 
     @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)
@@ -175,7 +202,11 @@ export class ProjectsController{
     @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)
     @Get(':projectFormatName/clusters/:clusterFormatName/namespaces')
     @ProjectRoles(['edit', 'view', 'admin'])
-    async getProjectsClustersNamespaces(@Param('projectFormatName') projectFormatName, @Param('clusterFormatName') clusterFormatName, @User() user): Promise<any> {
+    async getProjectsClustersNamespaces(
+        @Param('projectFormatName') projectFormatName, 
+        @Param('clusterFormatName') clusterFormatName, 
+        @User() user
+    ): Promise<any> {
         var response = await this.clustersService.getProjectsClustersNamespaces(projectFormatName, clusterFormatName);
         return this.responseService.createResponse(response, "Got project cluster namespaces.");
     }
@@ -204,6 +235,7 @@ export class ProjectsController{
         }catch(error){
             throw new HttpException(error, HttpStatus.METHOD_NOT_ALLOWED);
         }
+
         // Finally, do the cluster routine to make sure access is correct in cloned
         var response = await this.clustersService.getProjectCluster(projectFormatName, targetCluster.formatName, user.username);
         

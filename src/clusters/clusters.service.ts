@@ -91,25 +91,44 @@ export class ClustersService {
       return await this.azureDataSource.getClusterKubeConfig(name);
     }
 
-    async getAKSCluster(name: string) {
-      var azureCluster = await this.azureDataSource.getCluster(name);
+    /*
+    * This function will get the actual cluster data from Azure, also it will make 
+    * sure to update the vendor-state and do the necessary changes if done creating 
+    * or patching
+    */
+    async getAKSCluster(cluster: any) {
+      var azureCluster = await this.azureDataSource.getCluster(cluster.name);
 
-      var aksProgressStates = this.configService.get<String[]>('aks.progressStates');
-      
-      var currentState = azureCluster?.properties?.provisioningState;
-      // This is for updating the reference status so we won't spam Azure in vain
-      if(currentState && !aksProgressStates.includes(currentState)){
-        var cluster = await this.getCluster(name);
+      var previousState = cluster.vendorState;
+      var currentState = this.normalizeClusterState(cluster, azureCluster?.properties?.provisioningState);
+
+      // A create was done
+      if(previousState == "creating" && currentState != previousState){
         // Really important to make sure the cluster has standards configurated for the enterprise
         cluster = await this.azureDataSource.postProvisionModifyCluster(cluster, azureCluster);
-        // Normalize vendorState
-        cluster['vendorState'] = this.normalizeClusterState(cluster, cluster.vendorState);
+        cluster['vendorState'] = currentState;
         // Also do internal updates when cluster is done
         if(await this.kubernetesService.hasKubernetesAccess(cluster)){
           cluster = await this.postProvisionModifyCluster(cluster);
         }
-      }else if(!currentState){
-        this.logger.debug(`Cluster ${cluster.name} is missing a state.`);
+        this.logger.addLogEntry(`Cluster ${cluster['formatName']} has been created in Azure and setup properly in CloudGuard.`, {
+            clusterId: cluster['id'],
+            vendorState: cluster['vendorState'] 
+        }, "cluster_created");
+      }
+
+      // A patching was done
+      if(previousState == "patching" && currentState != previousState){
+        cluster['vendorState'] = currentState;
+        // Also do internal updates when cluster is done
+        if(await this.kubernetesService.hasKubernetesAccess(cluster)){
+          cluster = await this.postProvisionModifyCluster(cluster);
+        }
+        this.logger.addLogEntry(`Cluster ${cluster['formatName']} has been patched in Azure.`, {
+          clusterId: cluster['id'],
+          vendorState: cluster['vendorState'],
+          versionInfo: cluster.platformVersionInfo
+      }, "cluster_patched");
       }
 
       return azureCluster;
@@ -214,7 +233,7 @@ export class ClustersService {
       
       // Cluster can be in a state where we need to ask the vendor if something has changed
       if(this.hasVendorProgress(cluster)){
-        await this.getAKSCluster(cluster.name);
+        await this.getAKSCluster(cluster);
       }
       
       if(await this.kubernetesService.hasKubernetesAccess(cluster)){

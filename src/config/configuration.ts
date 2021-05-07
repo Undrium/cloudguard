@@ -1,6 +1,6 @@
 export default () => ({
     logging: {
-        logLevels: ['warn', 'debug', 'error'],
+        logLevels: ['warn', 'debug', 'error', 'logs'],
         logTypes: [
             "common", 
             "cluster_created", 
@@ -52,8 +52,6 @@ export default () => ({
         clientId: process.env.CLOUDGUARD_AKS_CLIENT_ID,
         subscription: process.env.CLOUDGUARD_AKS_SUBSCRIPTION,
         secret: process.env.CLOUDGUARD_AKS_SECRET,
-        resourceGroup: process.env.CLOUDGUARD_AKS_RESOURCE_GROUP,
-        // States which means Azure is doing stuff to cluster
-        progressStates: ["Creating", "Upgrading", "Terminating"]
+        resourceGroup: process.env.CLOUDGUARD_AKS_RESOURCE_GROUP
     }
   });

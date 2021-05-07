@@ -221,7 +221,6 @@ export class AzureDataSource {
             cluster['apiServer'] = apiSerer;
         }
         cluster['token'] = await this.getClusterAdminToken(cluster.name);
-        cluster['vendorState'] = azureCluster.properties.provisioningState;
         //TODO Configurator service should setup the rest of the containers/services we need
         //await this.azureConfiguratorService.setupYaml(cluster);
         return cluster;
