@@ -43,8 +43,8 @@ export class ClustersService {
     }
 
 
-    async createAKSCluster(clusterData: any, projectFormatName?: string) {
-      var cloudguardCluster = {};
+    async createAKSCluster(clusterData: any, projectFormatName?: string): Promise<Cluster> {
+      var cloudguardCluster: Cluster = null;
       var azureResponse = await this.azureDataSource.createCluster(clusterData);
       // We need a reference somewhere, create it here
       if(clusterData.name){
@@ -98,7 +98,6 @@ export class ClustersService {
     */
     async getAKSCluster(cluster: any) {
       var azureCluster = await this.azureDataSource.getCluster(cluster.name);
-
       var previousState = cluster.vendorState;
       var currentState = this.normalizeClusterState(cluster, azureCluster?.properties?.provisioningState);
 
@@ -111,10 +110,7 @@ export class ClustersService {
         if(await this.kubernetesService.hasKubernetesAccess(cluster)){
           cluster = await this.postProvisionModifyCluster(cluster);
         }
-        this.logger.addLogEntry(`Cluster ${cluster['formatName']} has been created in Azure and setup properly in CloudGuard.`, {
-            clusterId: cluster['id'],
-            vendorState: cluster['vendorState'] 
-        }, "cluster_created");
+        this.logger.logClusterCreated(cluster);
       }
 
       // A patching was done
@@ -124,11 +120,7 @@ export class ClustersService {
         if(await this.kubernetesService.hasKubernetesAccess(cluster)){
           cluster = await this.postProvisionModifyCluster(cluster);
         }
-        this.logger.addLogEntry(`Cluster ${cluster['formatName']} has been patched in Azure.`, {
-          clusterId: cluster['id'],
-          vendorState: cluster['vendorState'],
-          versionInfo: cluster.platformVersionInfo
-      }, "cluster_patched");
+        this.logger.logClusterPatched(cluster);
       }
 
       return azureCluster;
@@ -310,8 +302,52 @@ export class ClustersService {
         }
       }
 
-      async generateAccess(project: Project, cluster: Cluster, user: User){
+      public async getModificationEstimation(clusterFormatName: string, type?: string ): Promise<any>{
+        if(!type){type = "created"}
+        var cluster = await this.getCluster(clusterFormatName);
 
+        var startLog = await this.logger.getClusterStartLogEntry(cluster, type == "created" ? "creating" : "patching");
+
+        var estimation = {
+          "type": type,
+          "averageTime": 0,
+          "longestTime": 0,
+          "shortestTime": 0,
+          "startTime": null,
+          "currentTime": new Date()
+        }
+
+        if(startLog && startLog.created){
+          estimation.startTime = startLog.created;
+        }
+
+        var logs = await this.logger.getClusterChangeLogEntries({where: {logType: "clusterChange", logAction: type}});
+        
+        var sumTimes = 0, numberOfTimes = 0;
+        for(var log of logs){
+          if(!log.metadata || !log.metadata['started']){
+            continue;
+          }
+          var startTime = new Date(log.metadata['started']);
+          var endTime = new Date(log.created);
+          var elapsedSeconds = Math.abs((endTime.getTime() - startTime.getTime()) / 1000);
+          // We ignore really long measures as they are usually wrong (polling occured way after actual patch/create)
+          if(elapsedSeconds > 1200){
+            continue;
+          }
+
+          if(estimation.longestTime < elapsedSeconds){
+            estimation.longestTime = elapsedSeconds;    
+          }
+          if(estimation.shortestTime > elapsedSeconds || estimation.shortestTime === 0){
+            estimation.shortestTime = elapsedSeconds;    
+          }
+          sumTimes += elapsedSeconds;
+          numberOfTimes++;
+        }
+        estimation.averageTime = sumTimes / numberOfTimes;
+
+        return estimation;
       }
 
 

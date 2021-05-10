@@ -3,10 +3,10 @@ export default () => ({
         logLevels: ['warn', 'debug', 'error', 'logs'],
         logTypes: [
             "common", 
-            "cluster_created", 
-            "cluster_creation_started",
-            "cluster_patched",
-            "cluster_patching_started"
+            "clusterChange"
+        ],
+        logActions: [
+            "other", "creating", "created", "patching", "patched", "deleting", "deleted", "added"
         ]
     },
     ldap: {

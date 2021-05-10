@@ -87,6 +87,22 @@ export class ProjectsController{
     }
 
     @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)
+    @Get(':projectFormatName/clusters/:clusterFormatName/estimation/:type')
+    @ProjectRoles(['edit', 'view', 'admin'])
+    async getModificationEstimation(
+        @Param('projectFormatName') projectFormatName, 
+        @Param('clusterFormatName') clusterFormatName, 
+        @Param('actionType') type
+    ) {
+        var actionType = "created";
+        if(type == "patching" || type == "patch" || type == "patched"){
+            actionType = "patched";        
+        }
+        var estimation = await this.clustersService.getModificationEstimation(clusterFormatName, actionType); 
+        return this.responseService.createResponse(estimation, "Estimation done by the CloudGuard.");
+    }
+
+    @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)
     @Post(':projectFormatName/clusters')
     @ProjectRoles(['edit', 'view', 'admin'])
     async createProjectExistingCluster(@Param('projectFormatName') projectFormatName, @Body() clusterPostDto: ClusterPostDto, @User() user) {
@@ -95,7 +111,7 @@ export class ProjectsController{
             clusterId: cluster.id,
             username: user.username,
             projectFormatName: projectFormatName
-        }, "common");
+        }, "clusterChange", "added");
         return this.responseService.createResponse(cluster, "Created existing cluster.");
     }
 
@@ -103,18 +119,21 @@ export class ProjectsController{
     @Post(':projectFormatName/clusters/aks')
     @ProjectRoles(['edit', 'view', 'admin'])
     async createProjectAksCluster(@Param('projectFormatName') projectFormatName, @Body() clusterData: any, @User() user) {
+        var cluster = null;
         try{
-            var cluster = await this.clustersService.createAKSCluster(clusterData, projectFormatName);
+            cluster = await this.clustersService.createAKSCluster(clusterData, projectFormatName);
             this.logger.addLogEntry(`${user.username} started creating an AKS cluster (${cluster['formatName']}).`, {
                 clusterId: cluster['id'],
                 username: user.username,
                 projectFormatName: projectFormatName
-            }, "cluster_creation_started");
+            }, "clusterChange", "creating");
         }catch(error){
             throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
         }
         
-        return this.responseService.createResponse(cluster, "Started creating cluster in Azure.");
+        var estimation = await this.clustersService.getModificationEstimation(cluster.formatName, "creating"); 
+
+        return this.responseService.createResponse(cluster, "Started creating cluster in Azure.", estimation);
     }
 
     @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)
@@ -136,9 +155,11 @@ export class ProjectsController{
             username: user.username,
             projectFormatName: projectFormatName,
             patchData: patchData
-        }, "cluster_patching_started");
+        }, "clusterChange", "patching");
 
-        return this.responseService.createResponse(cluster, "Started patching cluster in Azure.");
+        var estimation = await this.clustersService.getModificationEstimation(cluster.formatName, "patching"); 
+
+        return this.responseService.createResponse(cluster, "Started patching cluster in Azure.", estimation);
     }
 
     @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)

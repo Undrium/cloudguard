@@ -47,7 +47,10 @@ export class SandboxController implements OnModuleInit{
         this.projectRolesService.addOrUpdateUserToProject(project3.formatName, user.username, role2.id);
         this.projectRolesService.addOrUpdateUserToProject(project4.formatName, user.username, role3.id);
 
-        
+        //var cluster = await this.clustersService.getCluster("semla-generated");
+
+        //var estimates = await this.clustersService.getModificationEstimation(cluster.formatName, "created");
+        //console.log(estimates);
         //await this.kubernetesService.upsertArgo(cluster, {});
  
         //var createdClusterName = await this.azureService.createCluster({name: "cloudguard"});
