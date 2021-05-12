@@ -31,9 +31,6 @@ export class Cluster {
     @Column({ default: "KUBERNETES" })
     platform: string;
 
-    @Column('jsonb', {nullable: true})
-    platformVersionInfo?: object;
-
     @Column({ default: "LOCAL" })
     vendor: string;
 
@@ -43,11 +40,23 @@ export class Cluster {
     @Column('jsonb', {nullable: true})
     specification?: object;
 
-    @Column({ default: "" })
-    vendorLocation: string;
+    @Column('jsonb', {nullable: false, default: {}})
+    internal: {
+        description?: string, 
+        comment?: string
+    };
 
-    @ManyToOne(type => Project, project => project.clusters, 
-        { onUpdate: 'CASCADE', onDelete: 'CASCADE', nullable: true })
+    @Column('jsonb', {nullable: false, default: {}})
+    external: {
+        platformVersionInfo?: object;
+        vendorLocation: string;
+    };
+
+    @ManyToOne(
+        type => Project, 
+        project => project.clusters, 
+        { onUpdate: 'CASCADE', onDelete: 'CASCADE', nullable: true }
+    )
     project: Project;
 
     public readyForKubernetes(){

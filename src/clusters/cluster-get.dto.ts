@@ -20,17 +20,22 @@ export class ClusterGetDto {
   @ApiProperty({ example: 'Platform name' })
   public platform: string;
 
-  @ApiProperty({ example: '1.17.1' })
-  public vendor: string;
-
   @ApiProperty({ example: 'Azure or Amazon for instance' })
-  public platformVersionInfo: any;
+  public vendor: string;
 
   @ApiProperty({ example: 'Clusters state at the vendor' })
   public vendorState: string;
 
-  @ApiProperty({ example: 'Where the cluster is located' })
-  public vendorLocation: string;
+  @ApiProperty({ type: () => Object, default:{} })
+  public internal: {
+      description?: string;
+  }
+
+  @ApiProperty({ type: () => Object, default:{} })
+  public external: {
+    platformVersionInfo?: object;
+    vendorLocation: string;
+  }
 
   constructor(cluster = null){
     if(cluster){
@@ -43,9 +48,13 @@ export class ClusterGetDto {
     this.formatName = cluster.formatName;
     this.apiServer = cluster.apiServer;
     this.platform = cluster.platform;
-    this.platformVersionInfo = cluster.platformVersionInfo;
+
+    this.external = {
+      platformVersionInfo:  cluster.external['platformVersionInfo'],
+      vendorLocation: cluster.external['vendorLocation']
+    };
+
     this.vendor = cluster.vendor;
     this.vendorState = cluster.vendorState;
-    this.vendorLocation = cluster.vendorLocation;
   }
 }

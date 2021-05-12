@@ -87,7 +87,7 @@ export class ProjectsController{
     }
 
     @UseGuards(MustHaveJwtGuard, ProjectRolesGuard)
-    @Get(':projectFormatName/clusters/:clusterFormatName/estimation/:type')
+    @Get(':projectFormatName/clusters/:clusterFormatName/estimation/:actionType')
     @ProjectRoles(['edit', 'view', 'admin'])
     async getModificationEstimation(
         @Param('projectFormatName') projectFormatName, 
@@ -98,6 +98,7 @@ export class ProjectsController{
         if(type == "patching" || type == "patch" || type == "patched"){
             actionType = "patched";        
         }
+
         var estimation = await this.clustersService.getModificationEstimation(clusterFormatName, actionType); 
         return this.responseService.createResponse(estimation, "Estimation done by the CloudGuard.");
     }

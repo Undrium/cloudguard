@@ -54,7 +54,7 @@ export class ClustersService {
             platform: "KUBERNETES",
             vendor: "AZURE",
             vendorState: "creating",
-            vendorLocation: azureResponse.location,
+            external: { vendorLocation: azureResponse.location },
             specification: clusterData.specification
           }
           // Attach it to a project if wanted
@@ -142,7 +142,7 @@ export class ClustersService {
     */
     async postProvisionModifyCluster(cluster: Cluster){
       var versionInfo = await this.kubernetesService.getKubernetesVersionInfo(cluster);
-      cluster.platformVersionInfo = versionInfo;
+      cluster.external.platformVersionInfo = versionInfo;
       return await this.update(cluster);
     }
 
